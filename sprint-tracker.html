@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 26 — Performance Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
+  --accent: #4f8ef7; --text: #e8eaf6; --muted: #7a80a4;
+  --green: #34d399; --red: #f87171; --amber: #fbbf24; --purple: #a78bfa;
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ──────────────────────────────────────────────────────── */
+#sidebar { width: 230px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.logo { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.logo h1 { font-size: 17px; font-weight: 700; }
+.logo h1 span { color: var(--accent); }
+.logo p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.log-btn-wrap { padding: 12px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.log-session-btn { width: 100%; padding: 10px 0; border-radius: 9px; background: var(--accent); border: none; color: #fff; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: opacity .15s; }
+.log-session-btn:hover { opacity: .88; }
+
+.sidebar-scroll { flex: 1; overflow-y: auto; padding-bottom: 14px; }
+.sec-label { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; color: var(--muted); text-transform: uppercase; padding: 14px 18px 6px; display: flex; align-items: center; justify-content: space-between; }
+.sec-label-count { background: var(--surface2); border-radius: 10px; padding: 1px 7px; font-size: 10px; color: var(--muted); letter-spacing: 0; }
+
+.athlete-btn { display: flex; align-items: center; gap: 9px; padding: 8px 18px; cursor: pointer; border: none; background: none; color: var(--text); width: 100%; text-align: left; font-size: 13px; border-left: 3px solid transparent; transition: all .12s; }
+.athlete-btn:hover { background: var(--surface2); }
+.athlete-btn.active { background: var(--surface2); border-left-color: var(--ac, var(--accent)); font-weight: 600; }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+.metric-btn { display: block; width: calc(100% - 28px); margin: 2px 14px; padding: 7px 11px; background: none; border: 1px solid var(--border); border-radius: 7px; color: var(--muted); cursor: pointer; text-align: left; font-size: 12px; transition: all .12s; }
+.metric-btn:hover { border-color: var(--accent); color: var(--text); }
+.metric-btn.active { background: rgba(79,142,247,.14); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+/* custom distance pill in sidebar */
+.custom-dist-btn { display: flex; align-items: center; justify-content: space-between; width: calc(100% - 28px); margin: 2px 14px; padding: 7px 11px; background: none; border: 1px solid var(--border); border-radius: 7px; color: var(--muted); cursor: pointer; font-size: 12px; transition: all .12s; }
+.custom-dist-btn:hover { border-color: var(--amber); color: var(--text); }
+.custom-dist-btn.active { background: rgba(251,191,36,.12); border-color: var(--amber); color: var(--amber); font-weight: 600; }
+.custom-dist-btn .cd-rest { font-size: 10px; color: var(--muted); opacity: .7; }
+.custom-dist-btn.active .cd-rest { color: var(--amber); opacity: .8; }
+
+.no-custom { font-size: 11.5px; color: var(--muted); padding: 6px 18px 2px; line-height: 1.5; }
+
+.compare-btn { margin: 12px 14px 0; padding: 8px 12px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: var(--muted); width: calc(100% - 28px); }
+.compare-btn.active { border-color: var(--purple); color: var(--purple); background: rgba(167,139,250,.1); }
+
+/* ── MAIN ─────────────────────────────────────────────────────────── */
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 13px 22px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.tb-left h2 { font-size: 19px; font-weight: 700; }
+.tb-left p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.range-row { display: flex; gap: 5px; align-items: center; }
+.range-btn { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); background: none; color: var(--muted); cursor: pointer; font-size: 11.5px; transition: all .12s; }
+.range-btn:hover { border-color: var(--accent); color: var(--text); }
+.range-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.refresh-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: none; color: var(--muted); cursor: pointer; font-size: 11px; margin-left: 8px; display: flex; align-items: center; gap: 4px; }
+.refresh-btn:hover { border-color: var(--green); color: var(--green); }
+
+#body { flex: 1; display: flex; overflow: hidden; }
+#chart-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 14px; }
+.stat-card .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 5px; }
+.stat-card .val { font-size: 24px; font-weight: 700; line-height: 1; }
+.stat-card .val small { font-size: 12px; color: var(--muted); font-weight: 400; }
+.stat-card .sub { font-size: 11px; margin-top: 4px; color: var(--muted); }
+.stat-card .sub.up { color: var(--green); }
+.stat-card .sub.dn { color: var(--red); }
+
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 13px; padding: 18px; }
+.chart-card h3 { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 14px; }
+.chart-meta { font-size: 11px; color: var(--muted); margin-bottom: 12px; display: flex; gap: 14px; }
+.chart-meta span { display: flex; align-items: center; gap: 5px; }
+.chart-meta svg { opacity: .6; }
+.cleg { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.cleg-item { display: flex; align-items: center; gap: 5px; font-size: 11.5px; }
+.cleg-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+/* ── PANEL ────────────────────────────────────────────────────────── */
+#panel { width: 248px; flex-shrink: 0; background: var(--surface); border-left: 1px solid var(--border); padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+.panel-sec .ttl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+.pb-card { background: linear-gradient(135deg, rgba(79,142,247,.15), rgba(167,139,250,.15)); border: 1px solid rgba(79,142,247,.35); border-radius: 10px; padding: 12px 14px; }
+.pb-card.custom-pb { background: linear-gradient(135deg, rgba(251,191,36,.12), rgba(251,191,36,.05)); border-color: rgba(251,191,36,.35); }
+.pb-card .pb-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
+.pb-card .pb-val { font-size: 26px; font-weight: 800; color: var(--accent); margin: 2px 0 1px; line-height: 1; }
+.pb-card.custom-pb .pb-val { color: var(--amber); }
+.pb-card .pb-dt { font-size: 11px; color: var(--muted); }
+.sess-list { display: flex; flex-direction: column; gap: 6px; }
+.sess { background: var(--surface2); border-radius: 8px; padding: 9px 11px; border-left: 3px solid var(--border); font-size: 11.5px; position: relative; }
+.sess.has { border-left-color: var(--accent); }
+.sess.new-entry { border-left-color: var(--green); }
+.sess.custom-sess { border-left-color: var(--amber); }
+.sess .sd { font-size: 10.5px; color: var(--muted); font-weight: 600; }
+.sess .sv { font-size: 15px; font-weight: 700; margin: 1px 0; }
+.sess .sv small { font-size: 10px; color: var(--muted); font-weight: 400; }
+.sess .sr { font-size: 10px; color: var(--muted); }
+.sess .smeta { font-size: 10px; color: var(--amber); opacity: .8; margin-top: 2px; }
+.sess .sn { font-size: 10px; color: var(--amber); margin-top: 3px; }
+.sess .del-btn { position: absolute; top: 7px; right: 8px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; opacity: 0; transition: opacity .15s; padding: 2px 4px; border-radius: 4px; }
+.sess:hover .del-btn { opacity: 1; }
+.sess .del-btn:hover { color: var(--red); background: rgba(248,113,113,.1); }
+.new-entry-badge { display: inline-block; background: rgba(52,211,153,.15); color: var(--green); font-size: 9px; border-radius: 4px; padding: 1px 5px; margin-left: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+
+/* ── LOGGER OVERLAY ───────────────────────────────────────────────── */
+#logger-overlay { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(10,11,18,.85); backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity .2s; }
+#logger-overlay.open { opacity: 1; pointer-events: all; }
+#logger { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; width: 540px; max-width: 96vw; max-height: 93vh; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 24px 80px rgba(0,0,0,.6); }
+
+.logger-header { padding: 20px 22px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.logger-header h2 { font-size: 17px; font-weight: 700; }
+.logger-header h2 span { color: var(--accent); }
+.close-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all .12s; }
+.close-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* mode toggle */
+.mode-toggle { margin: 14px 22px 0; display: flex; background: var(--surface2); border-radius: 9px; padding: 3px; border: 1px solid var(--border); flex-shrink: 0; }
+.mode-btn { flex: 1; padding: 7px 0; border: none; background: none; color: var(--muted); font-size: 12.5px; font-weight: 600; border-radius: 7px; cursor: pointer; transition: all .15s; }
+.mode-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+.mode-btn.custom-active { background: var(--surface); color: var(--amber); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+
+/* selectors row */
+.logger-selectors { padding: 14px 22px; display: grid; gap: 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.logger-selectors.standard-grid { grid-template-columns: 1fr 1fr 1fr; }
+.logger-selectors.custom-grid  { grid-template-columns: 1fr 1fr; }
+.sel-group label { display: block; font-size: 10px; font-weight: 700; letter-spacing: .8px; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
+.sel-group select, .sel-group input[type=date], .sel-group input[type=text], .sel-group input[type=number].sel-input {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 8px; font-size: 12.5px; cursor: pointer; appearance: none; -webkit-appearance: none;
+}
+.sel-group select:focus, .sel-group input:focus { outline: none; border-color: var(--accent); }
+/* custom fields */
+#custom-fields { padding: 0 22px 14px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+#custom-fields .sel-group input:focus { border-color: var(--amber); }
+.custom-tip { font-size: 11px; color: var(--muted); padding: 8px 22px; background: rgba(251,191,36,.06); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.custom-tip strong { color: var(--amber); }
+
+/* entry */
+.logger-entry { padding: 18px 22px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.entry-label { font-size: 11px; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
+.entry-row { display: flex; gap: 10px; align-items: stretch; }
+.time-input-wrap { flex: 1; position: relative; }
+.time-input { width: 100%; background: var(--surface2); border: 2px solid var(--border); color: var(--text); font-size: 32px; font-weight: 700; text-align: center; padding: 16px 48px 16px 16px; border-radius: 12px; letter-spacing: 1px; transition: border-color .15s; }
+.time-input:focus { outline: none; border-color: var(--accent); }
+.time-input.custom-mode:focus { border-color: var(--amber); }
+.time-input::placeholder { color: var(--muted); font-weight: 400; font-size: 22px; }
+.clear-input { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px; }
+.clear-input:hover { color: var(--text); }
+.add-rep-btn { background: var(--accent); border: none; color: #fff; font-size: 14px; font-weight: 700; padding: 0 22px; border-radius: 12px; cursor: pointer; transition: opacity .15s; white-space: nowrap; }
+.add-rep-btn:hover { opacity: .85; }
+.add-rep-btn.custom-mode { background: var(--amber); color: #0f1117; }
+.entry-hint { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+/* live stats */
+.live-stats { display: flex; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); margin: 14px 22px 0; flex-shrink: 0; }
+.live-stat { flex: 1; padding: 10px 14px; background: var(--surface2); text-align: center; border-right: 1px solid var(--border); }
+.live-stat:last-child { border-right: none; }
+.live-stat .ls-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); margin-bottom: 3px; }
+.live-stat .ls-val { font-size: 18px; font-weight: 800; }
+.live-stat .ls-val.good { color: var(--green); }
+.live-stat .ls-val.bad  { color: var(--red); }
+.live-stat .ls-val.neutral { color: var(--text); }
+
+/* reps */
+.reps-section { padding: 14px 22px; flex-shrink: 0; }
+.reps-section h4 { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; }
+.reps-grid { display: flex; flex-wrap: wrap; gap: 8px; min-height: 48px; }
+.rep-chip { display: flex; flex-direction: column; align-items: center; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 14px; min-width: 72px; position: relative; transition: all .12s; }
+.rep-chip.rep-great { border-color: var(--green);  background: rgba(52,211,153,.12); }
+.rep-chip.rep-good  { border-color: #60a5fa;       background: rgba(96,165,250,.1); }
+.rep-chip.rep-avg   { border-color: var(--border); }
+.rep-chip.rep-slow  { border-color: var(--amber);  background: rgba(251,191,36,.1); }
+.rep-chip.rep-bad   { border-color: var(--red);    background: rgba(248,113,113,.1); }
+.rep-chip .rep-num  { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+.rep-chip .rep-time { font-size: 20px; font-weight: 800; line-height: 1; }
+.rep-chip .rep-delta { font-size: 10px; margin-top: 2px; font-weight: 600; }
+.rep-chip.rep-great .rep-delta { color: var(--green); }
+.rep-chip.rep-good  .rep-delta { color: #60a5fa; }
+.rep-chip.rep-slow  .rep-delta { color: var(--amber); }
+.rep-chip.rep-bad   .rep-delta { color: var(--red); }
+.rep-chip .rep-del { position: absolute; top: -5px; right: -5px; width: 16px; height: 16px; background: var(--red); border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 9px; color: #fff; cursor: pointer; }
+.rep-chip:hover .rep-del { display: flex; }
+.empty-reps { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+
+/* footer */
+.logger-footer { padding: 14px 22px; display: flex; gap: 10px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.notes-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 9px; font-size: 12.5px; resize: none; }
+.notes-input:focus { outline: none; border-color: var(--accent); }
+.save-btn { background: var(--green); border: none; color: #0f1117; font-size: 14px; font-weight: 800; padding: 0 24px; border-radius: 9px; cursor: pointer; transition: opacity .15s; white-space: nowrap; }
+.save-btn:hover { opacity: .88; }
+.save-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; opacity: 1; }
+
+/* flash */
+.flash { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--green); color: #0f1117; padding: 10px 22px; border-radius: 10px; font-weight: 700; font-size: 13.5px; z-index: 999; opacity: 0; transition: opacity .25s; pointer-events: none; white-space: nowrap; }
+.flash.show { opacity: 1; }
+
+#load-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; }
+#load-overlay.hidden { display: none; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="load-overlay"><div class="spinner"></div></div>
+<div class="flash" id="flash"></div>
+
+<!-- ── SESSION LOGGER ──────────────────────────────────────────────────────── -->
+<div id="logger-overlay">
+  <div id="logger">
+    <div class="logger-header">
+      <h2>Log <span>Session</span></h2>
+      <button class="close-btn" id="close-logger">✕</button>
+    </div>
+
+    <!-- mode toggle -->
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="mode-std" onclick="setMode('standard')">Standard Exercise</button>
+      <button class="mode-btn" id="mode-cust" onclick="setMode('custom')">Custom Distance</button>
+    </div>
+
+    <!-- standard selectors -->
+    <div class="logger-selectors standard-grid" id="std-selectors">
+      <div class="sel-group">
+        <label>Athlete</label>
+        <select id="log-athlete"></select>
+      </div>
+      <div class="sel-group">
+        <label>Exercise</label>
+        <select id="log-metric"></select>
+      </div>
+      <div class="sel-group">
+        <label>Date</label>
+        <input type="date" id="log-date">
+      </div>
+    </div>
+
+    <!-- custom fields -->
+    <div class="logger-selectors custom-grid" id="cust-selectors" style="display:none">
+      <div class="sel-group">
+        <label>Athlete</label>
+        <select id="log-athlete-c"></select>
+      </div>
+      <div class="sel-group">
+        <label>Date</label>
+        <input type="date" id="log-date-c">
+      </div>
+    </div>
+    <div id="custom-fields" style="display:none">
+      <div class="sel-group">
+        <label>Distance</label>
+        <input type="text" id="cust-dist" placeholder="e.g. 60m, 150m">
+      </div>
+      <div class="sel-group">
+        <label>Rest Between Reps</label>
+        <input type="text" id="cust-rest" placeholder="e.g. 3min, 90s">
+      </div>
+      <div class="sel-group">
+        <label>Start Type</label>
+        <select id="cust-start">
+          <option value="">— optional —</option>
+          <option value="Flying">Flying</option>
+          <option value="Standing">Standing</option>
+          <option value="Blocks">Blocks</option>
+        </select>
+      </div>
+    </div>
+    <div class="custom-tip" id="custom-tip" style="display:none">
+      Enter a <strong>distance</strong> and <strong>rest time</strong> — a new graph will be created automatically and all sessions for that distance will be tracked together.
+    </div>
+
+    <!-- entry -->
+    <div class="logger-entry">
+      <div class="entry-label" id="entry-label">Enter rep time (seconds)</div>
+      <div class="entry-row">
+        <div class="time-input-wrap">
+          <input type="number" class="time-input" id="time-input" placeholder="0.00" step="0.01" min="0" max="9999">
+          <button class="clear-input" id="clear-input-btn">×</button>
+        </div>
+        <button class="add-rep-btn" id="add-rep-btn">Add Rep</button>
+      </div>
+      <div class="entry-hint">Press <kbd style="background:var(--surface2);border:1px solid var(--border);padding:1px 5px;border-radius:4px;font-size:10px">Enter</kbd> or tap Add Rep</div>
+    </div>
+
+    <!-- live stats -->
+    <div class="live-stats">
+      <div class="live-stat"><div class="ls-lbl">Reps</div><div class="ls-val neutral" id="ls-reps">0</div></div>
+      <div class="live-stat"><div class="ls-lbl">Session Avg</div><div class="ls-val neutral" id="ls-avg">—</div></div>
+      <div class="live-stat"><div class="ls-lbl">vs Hist. Avg</div><div class="ls-val neutral" id="ls-vs-avg">—</div></div>
+      <div class="live-stat"><div class="ls-lbl">vs PB</div><div class="ls-val neutral" id="ls-vs-pb">—</div></div>
+    </div>
+
+    <!-- reps -->
+    <div class="reps-section">
+      <h4>Reps</h4>
+      <div class="reps-grid" id="reps-grid">
+        <div class="empty-reps" id="empty-reps">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Enter times above as you run each rep
+        </div>
+      </div>
+    </div>
+
+    <div class="logger-footer">
+      <textarea class="notes-input" id="log-notes" rows="2" placeholder="Notes — conditions, fatigue, injury flags…"></textarea>
+      <button class="save-btn" id="save-btn" disabled>Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SIDEBAR ─────────────────────────────────────────────────────────────── -->
+<nav id="sidebar">
+  <div class="logo">
+    <h1>Sprint <span>26</span></h1>
+    <p>Performance Tracker</p>
+  </div>
+  <div class="log-btn-wrap">
+    <button class="log-session-btn" id="open-logger-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Log Session
+    </button>
+  </div>
+  <div class="sidebar-scroll">
+    <div class="sec-label">Athletes</div>
+    <div id="athlete-list"></div>
+    <div class="sec-label">Standard Metrics</div>
+    <div id="metric-list"></div>
+    <div class="sec-label">
+      Custom Distances
+      <span class="sec-label-count" id="custom-count">0</span>
+    </div>
+    <div id="custom-dist-list"></div>
+    <button class="compare-btn" id="cmp-btn" style="margin-top:14px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>
+      Compare All
+    </button>
+  </div>
+</nav>
+
+<!-- ── MAIN ───────────────────────────────────────────────────────────────── -->
+<div id="main">
+  <div id="topbar">
+    <div class="tb-left">
+      <h2 id="tb-name">Cian</h2>
+      <p id="tb-metric">30m Flying Start — Average</p>
+    </div>
+    <div class="range-row">
+      <button class="range-btn" data-n="12">3M</button>
+      <button class="range-btn" data-n="26">6M</button>
+      <button class="range-btn active" data-n="9999">All</button>
+      <button class="refresh-btn" id="refresh-btn">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div id="body">
+    <div id="chart-area">
+      <div class="stat-grid" id="stats"></div>
+      <div class="chart-card">
+        <h3 id="mc-title">Performance Over Time</h3>
+        <div class="chart-meta" id="chart-meta" style="display:none"></div>
+        <div class="cleg" id="cleg" style="display:none"></div>
+        <div style="position:relative;height:300px"><canvas id="mc"></canvas></div>
+      </div>
+      <div class="chart-card" id="reps-card" style="display:none">
+        <h3 id="reps-card-title">Individual Rep Breakdown</h3>
+        <div style="position:relative;height:210px"><canvas id="rc"></canvas></div>
+      </div>
+    </div>
+
+    <div id="panel">
+      <div class="panel-sec">
+        <div class="ttl">Personal Best</div>
+        <div class="pb-card" id="pb-card">
+          <div class="pb-lbl" id="pb-lbl">30m Fly</div>
+          <div class="pb-val" id="pb-val">—</div>
+          <div class="pb-dt" id="pb-dt">—</div>
+        </div>
+      </div>
+      <div class="panel-sec">
+        <div class="ttl">Recent Sessions</div>
+        <div class="sess-list" id="sess-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── EMBEDDED HISTORICAL DATA ─────────────────────────────────────────────────
+const MINI = {"Cian":[{"d":"22-Jun","fa":3.12,"fr":[3.12,3.12],"s15":134},{"d":"29-Jun","fa":3.135,"fr":[3.17,3.12,3.11,3.14],"s15":135},{"d":"6-Jul","fa":3.06,"s15":134},{"d":"13-Jul","fa":3.043,"fr":[3.13,3.06,3.09,2.98,3,3],"a45":3.06,"s15":134},{"d":"20-Jul","a30":4.11},{"d":"27-Jul","a30":4.12},{"d":"3-Aug","fa":3.07,"fr":[3.05,3.15,3.05,2.98,3.07,3.12]},{"d":"10-Aug","fa":2.998,"fr":[3,3.04,2.97,2.96,3,3.02],"a45":3.11},{"d":"17-Aug","fa":3,"fr":[3.04,2.99,3.03,2.94]},{"d":"24-Aug","fa":2.903,"fr":[2.9,2.9,2.91,2.9]},{"d":"31-Aug","fa":3.08,"fr":[3.08,3.08,3.09,3.08,3.07]},{"d":"7-Sep","fa":2.967,"fr":[2.98,2.95,2.97],"a30":3.91},{"d":"14-Sep","fa":2.96,"fr":[2.96],"s15":134},{"d":"21-Sep","a30":3.96},{"d":"28-Sep","fa":2.96,"fr":[2.96,2.98,2.97,2.93],"a30":4.02},{"d":"5-Oct","fa":2.92,"fr":[2.97,2.92,2.89,2.9],"a30":3.94},{"d":"12-Oct","fa":3.01,"fr":[3.02,3.01,3.01,3],"a30":4.04,"s15":135},{"d":"19-Oct","fa":3.01,"fr":[2.96,3.04,3.02,3.02]},{"d":"26-Oct","fa":2.982,"fr":[2.98,3.01,2.96,2.96,2.99,2.97]},{"d":"2-Nov","fa":2.96,"fr":[2.98,2.94,2.96,2.94]},{"d":"9-Nov","fa":2.972,"fr":[2.95,2.97,2.97,2.97,3]},{"d":"16-Nov","fa":2.973,"fr":[3,2.96,3,2.95,2.97]},{"d":"23-Nov","fa":2.987,"fr":[2.99,3.01,2.97,2.99]},{"d":"30-Nov","fa":2.97,"fr":[2.97,2.99,2.96,2.95],"a45":3.08},{"d":"7-Dec","fa":2.91,"fr":[2.94,2.86,2.95,2.89],"a45":3.09,"a30":4.05},{"d":"14-Dec","fa":2.91,"fr":[2.91]},{"d":"21-Dec","fa":2.965,"fr":[2.96,2.98,2.99]},{"d":"22-Dec","fa":3.025,"fr":[2.94,3.01,3.02,3.05,3.07,3.06],"a45":3.16},{"d":"23-Dec","fa":3.062,"fr":[3.04,3.03,3.08,3.03,3.1,3.09],"a45":3.19},{"d":"27-Dec","fa":2.99,"fr":[2.96,2.96,3,3.02,3.01],"a45":3.16,"a30":4.11},{"d":"29-Dec","fa":2.91,"fr":[2.94,2.86,2.95,2.89],"a45":3.09,"a30":4.05},{"d":"3-Jan","fa":2.987,"fr":[2.98,2.99,2.95,3.01,3.01,2.98],"a45":3.13,"s15":133.9},{"d":"17-Jan","fa":2.997,"fr":[3.02,2.97,3]},{"d":"24-Jan","fa":3.03,"fr":[3.03,3.03],"a45":3.04,"a30":4.06,"s15":134.9},{"d":"31-Jan","fa":2.947,"fr":[2.97,2.91,2.96]},{"d":"7-Feb","fa":3.01,"fr":[3.01],"a45":3.14,"a30":4.13,"s15":135.7},{"d":"14-Feb","fa":3.008,"fr":[3,3.01,2.97,3.01,3.03,3.03],"a45":3.1,"a30":3.97,"s15":133.4},{"d":"21-Feb","fa":2.85,"fr":[2.84,2.88,2.83],"a45":3.05,"a30":3.96,"s15":135.6},{"d":"28-Feb","fa":2.953,"fr":[2.97,2.91,2.91,2.95,2.98,3],"s15":135.9},{"d":"7-Mar","fa":2.94,"fr":[2.96,2.95,2.94,2.91],"a30":4.01,"n":"7.03"},{"d":"21-Mar","fa":2.97,"fr":[2.96,2.98,3,2.94],"a30":4.03},{"d":"28-Mar","fa":2.908,"fr":[2.91,2.9,2.91],"a30":3.99},{"d":"4-Apr","fa":2.965,"fr":[2.98,2.95,2.95,2.99]},{"d":"11-Apr","fa":2.88,"fr":[2.86,2.9,2.88],"a30":3.97},{"d":"25-Apr","fa":2.87,"fr":[2.86,2.87,2.87,2.88],"a45":3.01,"a30":3.96},{"d":"2-May","fa":2.903,"fr":[2.9,2.91,2.9,2.9],"a45":3.04,"a30":3.97},{"d":"9-May","fa":2.873,"fr":[2.87,2.87,2.88,2.88,2.86],"a45":2.99},{"d":"16-May","fa":2.913,"fr":[2.93,2.91,2.92,2.89],"a45":3.03,"a30":3.92},{"d":"23-May","fa":2.923,"fr":[2.92,2.92,2.93,2.92],"a45":3.06,"a30":3.9},{"d":"30-May","fa":2.91,"fr":[2.92,2.9,2.92,2.91],"a30":3.95},{"d":"6-Jun","fa":2.897,"fr":[2.9,2.92,2.87,2.91],"a45":3.03,"a30":3.93},{"d":"13-Jun","fa":2.9,"fr":[2.9,2.88,2.9,2.9,2.92],"a30":3.96},{"d":"20-Jun","fa":2.907,"fr":[2.91,2.9,2.91,2.9],"a30":3.96},{"d":"27-Jun","fa":2.893,"fr":[2.9,2.89,2.89,2.9],"a45":3.04,"a30":3.89},{"d":"4-Jul","fa":2.887,"fr":[2.88,2.9,2.88,2.88,2.89],"a30":3.94},{"d":"11-Jul","fa":2.853,"fr":[2.85,2.87,2.85,2.85,2.84,2.86],"a30":3.9},{"d":"18-Jul","fa":2.87,"fr":[2.87,2.87,2.87,2.87,2.87],"a30":3.94},{"d":"25-Jul","fa":2.883,"fr":[2.88,2.89,2.88,2.88,2.88]},{"d":"1-Aug","fa":2.883,"fr":[2.89,2.88,2.88,2.88,2.88]},{"d":"8-Aug","fa":2.87,"fr":[2.87,2.88,2.86,2.87]},{"d":"3-Sep","fa":2.91,"fr":[2.93,2.88,2.92],"a30":3.99},{"d":"10-Sep","fa":2.88,"fr":[2.89,2.87,2.88]},{"d":"17-Sep","fa":2.88,"fr":[2.88,2.87,2.88,2.88]},{"d":"24-Sep","fa":2.89,"fr":[2.91,2.88,2.9,2.87],"a30":3.97},{"d":"1-Oct","fa":2.875,"fr":[2.89,2.87,2.87,2.86]},{"d":"8-Oct","fa":2.868,"fr":[2.91,2.88,2.87,2.84,2.84],"a30":4.01},{"d":"15-Oct","fa":2.977,"fr":[3,2.98,2.95,3.01,2.94,2.98]},{"d":"22-Oct","fa":2.91,"fr":[2.92,2.9,2.9,2.92],"a30":4.02},{"d":"29-Oct","fa":2.948,"fr":[2.94,2.93,2.97,2.95],"a30":3.97},{"d":"5-Nov","fa":2.993,"fr":[2.98,2.99,3.01],"a30":3.94},{"d":"12-Nov","fa":3,"fr":[3.01,2.97,3.02],"a30":4.04},{"d":"19-Nov","fa":2.918,"fr":[2.92,2.89,2.92,2.88,2.98],"a30":3.97},{"d":"26-Nov","fa":2.91,"fr":[2.87,2.91,2.95],"a30":3.99},{"d":"3-Dec","fa":2.883,"fr":[2.89,2.88,2.88]},{"d":"10-Dec","fa":2.905,"fr":[2.9,2.91,2.9,2.92],"a30":4.0},{"d":"17-Dec","fa":2.903,"fr":[2.91,2.9,2.9],"a30":3.99},{"d":"7-Jan","fa":2.873,"fr":[2.87,2.87,2.88,2.88,2.86]},{"d":"14-Jan","fa":2.87,"fr":[2.87,2.86,2.88]},{"d":"21-Jan","fa":2.855,"fr":[2.86,2.87,2.84]},{"d":"28-Jan","fa":2.86,"fr":[2.86,2.85,2.88,2.85]},{"d":"4-Feb","fa":2.853,"fr":[2.84,2.86,2.87,2.85]},{"d":"11-Feb","fa":2.857,"fr":[2.86,2.86,2.85]},{"d":"18-Feb","fa":2.843,"fr":[2.84,2.85,2.84]},{"d":"25-Feb","fa":2.86,"fr":[2.87,2.86,2.86,2.86]},{"d":"4-Mar","fa":2.857,"fr":[2.87,2.84,2.86]},{"d":"11-Mar","fa":2.86,"fr":[2.87,2.86,2.86]},{"d":"18-Mar","fa":2.853,"fr":[2.84,2.87,2.85]},{"d":"25-Mar","fa":2.843,"fr":[2.84,2.85,2.84]},{"d":"1-Apr","fa":2.857,"fr":[2.86,2.87,2.84]},{"d":"8-Apr","fa":2.87,"fr":[2.86,2.87,2.88]},{"d":"15-Apr","fa":2.867,"fr":[2.87,2.86,2.87]},{"d":"22-Apr","fa":2.843,"fr":[2.84,2.85,2.84]},{"d":"29-Apr","fa":2.855,"fr":[2.84,2.87,2.86]},{"d":"6-May","fa":2.85,"fr":[2.85,2.85,2.85]},{"d":"13-May","fa":2.853,"fr":[2.84,2.86,2.86]},{"d":"20-May","fa":2.86,"fr":[2.87,2.86,2.86]},{"d":"27-May","fa":2.857,"fr":[2.87,2.84,2.87]},{"d":"3-Jun","fa":2.857,"fr":[2.84,2.88,2.85]},{"d":"10-Jun","fa":2.86,"fr":[2.87,2.86,2.85]},{"d":"17-Jun","fa":2.863,"fr":[2.86,2.87,2.86]},{"d":"24-Jun","fa":2.857,"fr":[2.84,2.88,2.85]},{"d":"1-Jul","fa":2.857,"fr":[2.87,2.84,2.86]},{"d":"3-Jul","fa":2.84,"fr":[2.84]},{"d":"10-Jul","fa":2.89,"fr":[2.94,2.84],"s23":205.3,"s15":136.8},{"d":"17-Jul","fa":2.86,"fr":[2.87,2.94,2.86,2.77],"a45":3.06,"a30":3.91,"s23":206.1,"s15":140},{"d":"24-Jul","fa":2.842,"fr":[2.91,2.92,2.83,2.8,2.78,2.81],"a45":3.11,"a30":3.89},{"d":"31-Jul","fa":2.87,"fr":[2.84,2.86,2.94,2.84],"a45":3.02},{"d":"7-Aug","fa":2.92,"fr":[2.92],"a45":3.07}],"Vlad":[{"d":"24-Aug","fa":3.31},{"d":"21-Sep","fa":3.28},{"d":"28-Sep","fa":3.38,"a30":4.4},{"d":"5-Oct","fa":3.22,"a30":4.3},{"d":"19-Oct","fa":3.31},{"d":"26-Oct","fa":3.26},{"d":"2-Nov","fa":3.27},{"d":"23-Nov","fa":3.27},{"d":"30-Nov","fa":3.31},{"d":"7-Dec","fa":3.18,"a30":4.48},{"d":"4-Jan","fa":3.18,"fr":[3.18]},{"d":"11-Jan","fa":3.17,"fr":[3.16,3.18,3.12,3.24,3.16,3.17]},{"d":"18-Jan","fa":3.14,"fr":[3.11,3.16,3.22,3.16,3.13]},{"d":"25-Jan","fa":3.17,"fr":[3.2,3.19,3.19,3.16,3.13,3.14]},{"d":"1-Feb","fa":3.17,"fr":[3.2,3.14,3.14,3.2,3.18,3.15]},{"d":"26-Apr","fa":3.15,"fr":[3.14,3.1,3.19,3.13],"a30":4.22,"m150":51.04,"s15":130},{"d":"12-Jun","fa":3.066,"fr":[3.1,3.1,3.03,3.03,3.07]},{"d":"26-Jun","fa":3.093,"fr":[3.16,3.04,3.08,3.09],"a45":3.32},{"d":"17-Jul","fa":3.09,"fr":[3.08,3.07,3.12],"a45":3.25},{"d":"31-Jul","fa":3.1,"fr":[3.07,3.1,3.13],"a45":3.3},{"d":"14-Aug","fa":3.11,"fr":[3.11,3.14,3.08]}],"Charlie":[{"d":"14-Sep","fa":3.33},{"d":"21-Sep","fa":3.32},{"d":"28-Sep","fa":3.41},{"d":"12-Oct","fa":3.37,"a30":4.37},{"d":"23-Nov","fa":3.3},{"d":"30-Nov","fa":3.34},{"d":"7-Dec","fa":3.36},{"d":"8-Mar","fa":3.4,"fr":[3.44,3.4,3.43,3.33]},{"d":"29-Mar","fa":3.4},{"d":"19-Apr","fa":3.4,"fr":[3.39,3.4,3.39,3.4,3.44],"n":"38.7/39.9"},{"d":"26-Apr","fa":3.29,"fr":[3.27,3.28,3.26,3.35]},{"d":"3-May","fa":3.35,"fr":[3.41,3.39,3.39,3.28,3.29]},{"d":"10-May","fa":3.35,"fr":[3.41,3.34,3.34,3.33,3.34]},{"d":"31-May","fa":3.28,"fr":[3.35,3.23,3.26]},{"d":"7-Jun","fa":3.29,"fr":[3.29,3.25,3.31,3.29]},{"d":"16-Aug","fa":3.35,"fr":[3.35,3.3,3.34,3.36,3.4,3.35]},{"d":"23-Aug","fa":3.42,"fr":[3.44,3.41,3.43,3.42,3.39,3.44]},{"d":"30-Aug","fa":3.35,"fr":[3.35,3.34,3.36]},{"d":"6-Sep","fa":3.41,"fr":[3.41,3.4,3.41,3.43]},{"d":"13-Sep","fa":3.35,"fr":[3.35,3.35,3.36]},{"d":"20-Sep","fa":3.41,"fr":[3.41,3.4,3.41]},{"d":"27-Sep","fa":3.35,"fr":[3.35,3.34,3.36]},{"d":"4-Oct","fa":3.41,"fr":[3.41,3.42,3.4]}],"Jess":[{"d":"14-Sep","fa":4.05},{"d":"21-Sep","fa":3.96},{"d":"28-Sep","fa":4.0},{"d":"5-Oct","fa":3.91,"a30":4.96},{"d":"12-Oct","fa":3.93,"a30":4.91},{"d":"19-Oct","fa":3.96},{"d":"26-Oct","fa":3.97},{"d":"2-Nov","fa":3.95},{"d":"9-Nov","fa":3.92},{"d":"16-Nov","fa":3.95},{"d":"23-Nov","fa":3.97},{"d":"30-Nov","fa":3.94},{"d":"7-Dec","fa":3.91,"a30":4.88},{"d":"25-Jan","fa":3.87,"fr":[3.83,3.87,3.89,3.91]},{"d":"1-Feb","fa":3.89,"fr":[3.84,3.92,3.89,3.91]},{"d":"8-Feb","fa":3.88,"fr":[3.89,3.88,3.87,3.88]},{"d":"15-Feb","fa":3.9,"fr":[3.89,3.91,3.9,3.9]},{"d":"22-Feb","fa":3.87,"fr":[3.87,3.88,3.86,3.87]},{"d":"1-Mar","fa":3.86,"fr":[3.88,3.86,3.84,3.86]},{"d":"26-Apr","fa":3.87,"fr":[3.87,3.87,3.88,3.86],"a30":5.01},{"d":"3-May","fa":3.87,"fr":[3.87,3.87,3.88,3.87]},{"d":"10-May","fa":3.86,"fr":[3.86,3.87,3.86,3.85]},{"d":"31-May","fa":3.8,"fr":[3.8,3.79,3.82]},{"d":"7-Jun","fa":3.81,"fr":[3.82,3.8,3.81,3.81]},{"d":"14-Jun","fa":3.83,"fr":[3.84,3.83,3.82,3.83]},{"d":"21-Jun","fa":3.84,"fr":[3.84,3.85,3.83,3.84]},{"d":"28-Jun","fa":3.82,"fr":[3.82,3.83,3.81,3.82]},{"d":"5-Jul","fa":3.81,"fr":[3.81,3.81,3.82]},{"d":"12-Jul","fa":3.8,"fr":[3.8,3.79,3.81]},{"d":"19-Jul","fa":3.79,"fr":[3.79,3.8,3.78]},{"d":"26-Jul","fa":3.8,"fr":[3.8,3.81,3.79]},{"d":"2-Aug","fa":3.8,"fr":[3.8,3.79,3.81]},{"d":"9-Aug","fa":3.79,"fr":[3.79,3.8,3.78]},{"d":"16-Aug","fa":3.8,"fr":[3.8,3.79,3.81]},{"d":"23-Aug","fa":3.79,"fr":[3.79,3.8,3.78]},{"d":"30-Aug","fa":3.8,"fr":[3.8,3.79,3.81]},{"d":"6-Sep","fa":3.79,"fr":[3.79,3.8,3.78]},{"d":"13-Sep","fa":3.7,"fr":[3.71,3.7,3.69]},{"d":"20-Sep","fa":3.695,"fr":[3.7,3.69,3.7]},{"d":"27-Sep","fa":3.69,"fr":[3.69,3.7,3.68]}],"Elliot":[{"d":"26-Apr","fa":3.208,"fr":[3.21,3.2,3.22,3.21],"a45":3.9},{"d":"3-May","fa":3.217,"fr":[3.22,3.21,3.22,3.22]},{"d":"10-May","fa":3.22,"fr":[3.22,3.23,3.21,3.22]},{"d":"17-May","fa":3.215,"fr":[3.22,3.21,3.22,3.21]},{"d":"24-May","fa":3.213,"fr":[3.21,3.22,3.21,3.21]},{"d":"31-May","fa":3.208,"fr":[3.2,3.21,3.22,3.2]},{"d":"7-Jun","fa":3.205,"fr":[3.2,3.21,3.2,3.21]},{"d":"14-Jun","fa":3.2,"fr":[3.2,3.19,3.21,3.2]},{"d":"21-Jun","fa":3.197,"fr":[3.2,3.2,3.19,3.2]},{"d":"28-Jun","fa":3.2,"fr":[3.2,3.21,3.19,3.2]},{"d":"5-Jul","fa":3.195,"fr":[3.2,3.19,3.2,3.19]},{"d":"12-Jul","fa":3.137,"fr":[3.12,3.14,3.15,3.13]}]};
+
+// ── CONFIG ───────────────────────────────────────────────────────────────────
+const SHEET_ID = '1qD2sgFZM67788JxyoNhdLyTcWhEq4Kk_rwmrtVVRjLY';
+const ATHLETES = { Cian:{color:'#4f8ef7'}, Vlad:{color:'#a78bfa'}, Jess:{color:'#f472b6'}, Elliot:{color:'#fb923c'} };
+const STD_METRICS = [
+  { key:'fa',   label:'30m Fly Avg',   unit:'s', lb:true,  repKey:'fr' },
+  { key:'a45',  label:'45m Avg',        unit:'s', lb:true,  repKey:null },
+  { key:'a30',  label:'30m Start Avg',  unit:'s', lb:true,  repKey:null },
+  { key:'m150', label:'150m Time',      unit:'s', lb:true,  repKey:null },
+  { key:'s15',  label:'15s Distance',   unit:'m', lb:false, repKey:null },
+  { key:'s23',  label:'23s Distance',   unit:'m', lb:false, repKey:null },
+];
+const LS_KEY = 'sprint26_sessions_v3';
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let DATA = {};          // standard data per athlete
+let CDATA = {};         // custom data: CDATA[distKey][athlete] = [{d, avg, reps, rest, startType, n}]
+let ALL_DIST_KEYS = []; // ordered list of custom distance keys
+let S = { athlete:'Cian', metric:'fa', range:9999, compare:false };
+// S.metric is either a STD_METRICS key ('fa') or 'custom:60m_flying' etc.
+let mainChart = null, repsChart = null;
+
+// Logger
+let logReps = [];
+let logMode = 'standard'; // 'standard' | 'custom'
+let logHistAvg = null, logHistPB = null;
+
+// ── LOCALSTORAGE ─────────────────────────────────────────────────────────────
+function loadSaved() { try { return JSON.parse(localStorage.getItem(LS_KEY)||'[]'); } catch { return []; } }
+function saveSessions(arr) { localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
+
+function normalizeDistKey(dist, startType) {
+  // "60m" + "Flying" → "60m_Flying", "60m" + "" → "60m"
+  const d = (dist||'').trim().toLowerCase().replace(/\s+/g,'');
+  const s = (startType||'').trim();
+  return s ? `${d}_${s}` : d;
+}
+
+function distKeyLabel(key) {
+  // "60m_Flying" → "60m · Flying"  |  "60m" → "60m"
+  return key.replace(/_/g, ' · ');
+}
+
+function buildData() {
+  // Standard data
+  DATA = {};
+  Object.keys(ATHLETES).forEach(n => { DATA[n] = JSON.parse(JSON.stringify(MINI[n]||[])); });
+
+  CDATA = {};
+  ALL_DIST_KEYS = [];
+
+  const saved = loadSaved();
+  saved.forEach(entry => {
+    if (entry.type === 'custom') {
+      const dk = entry.distKey;
+      if (!CDATA[dk]) { CDATA[dk] = {}; ALL_DIST_KEYS.push(dk); }
+      if (!CDATA[dk][entry.athlete]) CDATA[dk][entry.athlete] = [];
+      CDATA[dk][entry.athlete].push({ d: entry.date, avg: entry.avg, reps: entry.reps||[], rest: entry.rest||'', startType: entry.startType||'', n: entry.n||'', _saved:true });
+    } else {
+      const arr = DATA[entry.athlete];
+      if (!arr) return;
+      const rec = { d:entry.date, _saved:true };
+      STD_METRICS.forEach(m => { if(entry[m.key]!=null) rec[m.key]=entry[m.key]; });
+      if(entry.fr?.length) rec.fr=entry.fr;
+      if(entry.n) rec.n=entry.n;
+      arr.push(rec);
+    }
+  });
+
+  // Remove duplicate dist keys
+  ALL_DIST_KEYS = [...new Set(ALL_DIST_KEYS)];
+
+  // Sort standard data
+  Object.keys(DATA).forEach(n => DATA[n].sort((a,b)=>dateSort(a.d,b.d)));
+  // Sort custom data
+  Object.values(CDATA).forEach(byAth => {
+    Object.values(byAth).forEach(arr => arr.sort((a,b)=>dateSort(a.d,b.d)));
+  });
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function isCustomMetric() { return S.metric.startsWith('custom:'); }
+function customDistKey()  { return S.metric.replace('custom:',''); }
+
+function getMeta(key) { return STD_METRICS.find(m=>m.key===key); }
+
+function filteredStdRows(name) {
+  const all = (DATA[name]||[]).filter(r=>r[S.metric]!=null);
+  return S.range>=9999 ? all : all.slice(-S.range);
+}
+
+function filteredCustRows(name) {
+  const dk = customDistKey();
+  const all = (CDATA[dk]?.[name]||[]);
+  return S.range>=9999 ? all : all.slice(-S.range);
+}
+
+function destroy(c) { c&&c.destroy(); return null; }
+
+function pbStd(rs) {
+  if(!rs.length) return null;
+  const m = getMeta(S.metric);
+  return rs.reduce((b,r)=>(m.lb?r[S.metric]<b[S.metric]:r[S.metric]>b[S.metric])?r:b);
+}
+
+function pbCust(rows) {
+  // lower is better (time)
+  if(!rows.length) return null;
+  return rows.reduce((b,r)=>r.avg<b.avg?r:b);
+}
+
+function histAvgStd(name, key) {
+  const v=(MINI[name]||[]).filter(r=>r[key]!=null);
+  return v.length ? v.reduce((s,r)=>s+r[key],0)/v.length : null;
+}
+
+function histPBStd(name, key) {
+  const v=(MINI[name]||[]).filter(r=>r[key]!=null);
+  if(!v.length) return null;
+  const m=getMeta(key);
+  return v.reduce((b,r)=>(m.lb?r[key]<b[key]:r[key]>b[key])?r:b)[key];
+}
+
+function custHistAvg(name, dk) {
+  const rows=(CDATA[dk]?.[name]||[]);
+  return rows.length ? rows.reduce((s,r)=>s+r.avg,0)/rows.length : null;
+}
+
+function custHistPB(name, dk) {
+  const rows=(CDATA[dk]?.[name]||[]);
+  return rows.length ? rows.reduce((b,r)=>r.avg<b.avg?r:b).avg : null;
+}
+
+function trendStd(rs) {
+  const t=rs.slice(-8); if(t.length<2) return null;
+  const diff=t.at(-1)[S.metric]-t[0][S.metric];
+  return {diff:diff.toFixed(3), good: getMeta(S.metric).lb ? diff<0 : diff>0};
+}
+
+function trendCust(rows) {
+  const t=rows.slice(-8); if(t.length<2) return null;
+  const diff=t.at(-1).avg-t[0].avg;
+  return {diff:diff.toFixed(3), good:diff<0}; // time = lower better
+}
+
+function dateSort(a,b) {
+  const mo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const p=d=>{const[day,mon]=d.split('-');return(mo[mon]??0)*100+parseInt(day||0);};
+  return p(a)-p(b);
+}
+
+function todayStr() {
+  const d=new Date(), mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()}-${mo[d.getMonth()]}`;
+}
+function fmtDateInput(str) {
+  const mo={Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+  const[day,mon]=str.split('-');
+  return `${new Date().getFullYear()}-${mo[mon]||'01'}-${day.padStart(2,'0')}`;
+}
+function parseDateInput(val) {
+  const d=new Date(val+'T00:00:00');
+  const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()}-${mo[d.getMonth()]}`;
+}
+
+// ── CHART OPTIONS ─────────────────────────────────────────────────────────────
+function chartOpts(lowerBetter=true, unit='s') {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:'#1a1d27',borderColor:'#2e3350',borderWidth:1,titleColor:'#e8eaf6',bodyColor:'#7a80a4',
+        callbacks:{label:c=>` ${c.dataset.label||''}: ${c.parsed.y?.toFixed(3)} ${unit}`}}
+    },
+    scales:{
+      x:{grid:{color:'#2e3350'},ticks:{color:'#7a80a4',maxTicksLimit:12,maxRotation:35,font:{size:10}}},
+      y:{grid:{color:'#2e3350'},ticks:{color:'#7a80a4',font:{size:10.5}},reverse:lowerBetter}
+    },
+    interaction:{mode:'index',intersect:false}
+  };
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  const isCust = isCustomMetric();
+  document.getElementById('tb-name').textContent = S.compare ? 'All Athletes' : S.athlete;
+
+  if (isCust) {
+    const dk = customDistKey();
+    document.getElementById('tb-metric').textContent = distKeyLabel(dk) + ' — Avg Time';
+    document.getElementById('pb-card').className = 'pb-card custom-pb';
+  } else {
+    const m = getMeta(S.metric);
+    document.getElementById('tb-metric').textContent = m.label;
+    document.getElementById('pb-card').className = 'pb-card';
+  }
+  renderStats(); renderMain(); renderReps(); renderPanel();
+}
+
+function renderStats() {
+  const el = document.getElementById('stats');
+  if (isCustomMetric()) {
+    const rows = filteredCustRows(S.athlete);
+    if(!rows.length){ el.innerHTML=`<div style="color:var(--muted);font-size:13px">No sessions logged for this distance yet.</div>`; return; }
+    const latest=rows.at(-1), best=pbCust(rows), t=trendCust(rows);
+    const avg=(rows.reduce((s,r)=>s+r.avg,0)/rows.length).toFixed(3);
+    el.innerHTML=`
+    <div class="stat-card"><div class="lbl">Latest</div><div class="val">${latest.avg.toFixed(3)}<small> s</small></div><div class="sub">${latest.d}<span class="new-entry-badge">new</span></div></div>
+    <div class="stat-card"><div class="lbl">Personal Best</div><div class="val">${best.avg.toFixed(3)}<small> s</small></div><div class="sub">${best.d}</div></div>
+    <div class="stat-card"><div class="lbl">Average</div><div class="val">${avg}<small> s</small></div><div class="sub">${rows.length} sessions</div></div>
+    <div class="stat-card"><div class="lbl">Trend (last 8)</div><div class="val" style="font-size:18px">${t?(t.good?'▲ Improving':'▼ Declining'):'—'}</div><div class="sub ${t?(t.good?'up':'dn'):''}">${t?t.diff+' s':'Not enough data'}</div></div>`;
+  } else {
+    const m=getMeta(S.metric), rs=filteredStdRows(S.athlete);
+    if(!rs.length){ el.innerHTML=`<div style="color:var(--muted);font-size:13px">No data for this athlete/metric.</div>`; return; }
+    const latest=rs.at(-1), best=pbStd(rs), t=trendStd(rs);
+    const avg=(rs.reduce((s,r)=>s+r[S.metric],0)/rs.length).toFixed(3);
+    el.innerHTML=`
+    <div class="stat-card"><div class="lbl">Latest</div><div class="val">${latest[S.metric]}<small> ${m.unit}</small></div><div class="sub">${latest.d}${latest._saved?'<span class="new-entry-badge">new</span>':''}</div></div>
+    <div class="stat-card"><div class="lbl">Personal Best</div><div class="val">${best[S.metric]}<small> ${m.unit}</small></div><div class="sub">${best.d}</div></div>
+    <div class="stat-card"><div class="lbl">Average</div><div class="val">${avg}<small> ${m.unit}</small></div><div class="sub">${rs.length} sessions</div></div>
+    <div class="stat-card"><div class="lbl">Trend (last 8)</div><div class="val" style="font-size:18px">${t?(t.good?'▲ Improving':'▼ Declining'):'—'}</div><div class="sub ${t?(t.good?'up':'dn'):''}">${t?t.diff+' '+m.unit:'Not enough data'}</div></div>`;
+  }
+}
+
+function renderMain() {
+  mainChart = destroy(mainChart);
+  const ctx = document.getElementById('mc').getContext('2d');
+  const leg = document.getElementById('cleg');
+  const meta = document.getElementById('chart-meta');
+  const isCust = isCustomMetric();
+  const dk = isCust ? customDistKey() : null;
+
+  // Chart meta (rest/start for custom)
+  if (isCust && !S.compare) {
+    const rows = filteredCustRows(S.athlete);
+    const restVals = [...new Set(rows.map(r=>r.rest).filter(Boolean))];
+    const stVals   = [...new Set(rows.map(r=>r.startType).filter(Boolean))];
+    const parts = [];
+    if(restVals.length) parts.push(`<span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Rest: ${restVals.join(' / ')}</span>`);
+    if(stVals.length) parts.push(`<span>Start: ${stVals.join(' / ')}</span>`);
+    meta.innerHTML = parts.join('');
+    meta.style.display = parts.length ? 'flex' : 'none';
+  } else {
+    meta.style.display = 'none';
+  }
+
+  document.getElementById('mc-title').textContent = isCust
+    ? `${distKeyLabel(dk)} — Avg Time Over Time`
+    : `${getMeta(S.metric).label} — Over Time`;
+
+  if (S.compare) {
+    leg.style.display = 'flex';
+    const names = Object.keys(ATHLETES);
+    let allDates, datasets;
+    if (isCust) {
+      allDates = [...new Set(names.flatMap(n=>(CDATA[dk]?.[n]||[]).map(r=>r.d)))].sort(dateSort);
+      datasets = names.map(name=>{
+        const byDate=Object.fromEntries((CDATA[dk]?.[name]||[]).map(r=>[r.d,r.avg]));
+        return {label:name,data:allDates.map(d=>byDate[d]??null),borderColor:ATHLETES[name].color,
+          backgroundColor:ATHLETES[name].color+'22',tension:.35,fill:false,pointRadius:4,pointHoverRadius:7,spanGaps:true};
+      });
+    } else {
+      allDates=[...new Set(names.flatMap(n=>(DATA[n]||[]).filter(r=>r[S.metric]!=null).map(r=>r.d)))].sort(dateSort);
+      datasets=names.map(name=>{
+        const byDate=Object.fromEntries((DATA[name]||[]).filter(r=>r[S.metric]!=null).map(r=>[r.d,r[S.metric]]));
+        return {label:name,data:allDates.map(d=>byDate[d]??null),borderColor:ATHLETES[name].color,
+          backgroundColor:ATHLETES[name].color+'22',tension:.35,fill:false,pointRadius:3,pointHoverRadius:6,spanGaps:true};
+      });
+    }
+    leg.innerHTML=names.map(n=>`<div class="cleg-item"><div class="cleg-dot" style="background:${ATHLETES[n].color}"></div>${n}</div>`).join('');
+    mainChart=new Chart(ctx,{type:'line',data:{labels:allDates,datasets},options:chartOpts(true,'s')});
+  } else {
+    leg.style.display='none';
+    const col=ATHLETES[S.athlete]?.color||'#4f8ef7';
+    if (isCust) {
+      const rows=filteredCustRows(S.athlete);
+      mainChart=new Chart(ctx,{type:'line',data:{
+        labels:rows.map(r=>r.d),
+        datasets:[{label:'Avg',data:rows.map(r=>r.avg),borderColor:col,backgroundColor:col+'20',fill:true,tension:.35,
+          pointRadius:5,pointHoverRadius:8,pointBackgroundColor:col}]
+      },options:chartOpts(true,'s')});
+    } else {
+      const rs=filteredStdRows(S.athlete);
+      const ptColors=rs.map(r=>r._saved?'#34d399':col);
+      const ptRadius=rs.map(r=>r._saved?6:4);
+      const m=getMeta(S.metric);
+      mainChart=new Chart(ctx,{type:'line',data:{
+        labels:rs.map(r=>r.d),
+        datasets:[{label:m.label,data:rs.map(r=>r[S.metric]),borderColor:col,backgroundColor:col+'20',fill:true,tension:.35,
+          pointRadius:ptRadius,pointHoverRadius:8,pointBackgroundColor:ptColors,pointBorderColor:ptColors}]
+      },options:chartOpts(m.lb,m.unit)});
+    }
+  }
+}
+
+function renderReps() {
+  repsChart=destroy(repsChart);
+  const card=document.getElementById('reps-card');
+  const isCust=isCustomMetric();
+  const showReps = !S.compare && (S.metric==='fa' || isCust);
+  if(!showReps){card.style.display='none';return;}
+
+  let recent, maxReps;
+  const col=ATHLETES[S.athlete]?.color||'#4f8ef7';
+
+  if(isCust){
+    const dk=customDistKey();
+    recent=(CDATA[dk]?.[S.athlete]||[]).filter(r=>r.reps?.length>1).slice(-20);
+    if(!recent.length){card.style.display='none';return;}
+    maxReps=Math.max(...recent.map(r=>r.reps.length));
+    document.getElementById('reps-card-title').textContent=`Rep Breakdown — ${distKeyLabel(dk)}`;
+  } else {
+    recent=(DATA[S.athlete]||[]).filter(r=>r.fr?.length>1).slice(-20);
+    if(!recent.length){card.style.display='none';return;}
+    maxReps=Math.max(...recent.map(r=>r.fr.length));
+    document.getElementById('reps-card-title').textContent='Individual Rep Breakdown — 30m Flys';
+  }
+
+  card.style.display='block';
+  const datasets=Array.from({length:maxReps},(_,i)=>({
+    label:`Rep ${i+1}`,spanGaps:true,
+    data:recent.map(r=>(isCust?r.reps:r.fr)[i]??null),
+    borderColor:col+Math.floor(80+175*(i+1)/(maxReps+1)).toString(16).padStart(2,'0'),
+    tension:.3,pointRadius:3,fill:false,
+  }));
+  const ctx2=document.getElementById('rc').getContext('2d');
+  repsChart=new Chart(ctx2,{type:'line',data:{labels:recent.map(r=>r.d),datasets},
+    options:{...chartOpts(),...{plugins:{...chartOpts().plugins,legend:{position:'bottom',labels:{color:'#7a80a4',font:{size:10},boxWidth:8,padding:10}}}}}});
+}
+
+function renderPanel() {
+  const isCust=isCustomMetric();
+  if(isCust){
+    const dk=customDistKey();
+    const rows=CDATA[dk]?.[S.athlete]||[];
+    const best=pbCust(rows);
+    document.getElementById('pb-lbl').textContent=distKeyLabel(dk);
+    document.getElementById('pb-val').textContent=best?`${best.avg.toFixed(3)} s`:'—';
+    document.getElementById('pb-dt').textContent=best?best.d:'—';
+    const recent=[...rows].slice(-8).reverse();
+    document.getElementById('sess-list').innerHTML=recent.map(r=>`
+      <div class="sess custom-sess">
+        <div class="sd">${r.d}<span class="new-entry-badge">new</span></div>
+        <div class="sv">${r.avg.toFixed(3)}<small> s</small></div>
+        ${r.reps?.length?`<div class="sr">${r.reps.join(', ')}</div>`:''}
+        ${r.rest?`<div class="smeta">Rest: ${r.rest}</div>`:''}
+        ${r.n?`<div class="sn">${r.n}</div>`:''}
+        <button class="del-btn" onclick="deleteCustomSession('${r.d}','${S.athlete}','${dk}')" title="Delete">✕</button>
+      </div>`).join('');
+  } else {
+    const m=getMeta(S.metric), all=DATA[S.athlete]||[], valid=all.filter(r=>r[S.metric]!=null);
+    const best=pbStd(valid);
+    document.getElementById('pb-lbl').textContent=m.label;
+    document.getElementById('pb-val').textContent=best?`${best[S.metric]} ${m.unit}`:'—';
+    document.getElementById('pb-dt').textContent=best?best.d:'—';
+    const recent=[...all].slice(-8).reverse();
+    document.getElementById('sess-list').innerHTML=recent.map(r=>{
+      const v=r[S.metric], reps=S.metric==='fa'&&r.fr?.length?r.fr.join(', '):'';
+      return `<div class="sess ${v!=null?'has':''} ${r._saved?'new-entry':''}">
+        <div class="sd">${r.d}${r._saved?'<span class="new-entry-badge">new</span>':''}</div>
+        ${v!=null?`<div class="sv">${v}<small> ${m.unit}</small></div>`:'<div style="font-size:11px;color:var(--muted)">No data</div>'}
+        ${reps?`<div class="sr">${reps}</div>`:''}
+        ${r.n?`<div class="sn">${r.n}</div>`:''}
+        ${r._saved?`<button class="del-btn" onclick="deleteSession('${r.d}','${S.athlete}')" title="Delete">✕</button>`:''}
+      </div>`;
+    }).join('');
+  }
+}
+
+function deleteSession(date, athlete) {
+  if(!confirm(`Delete session for ${athlete} on ${date}?`)) return;
+  const saved=loadSaved().filter(s=>!(s.athlete===athlete&&s.date===date&&s.type!=='custom'));
+  saveSessions(saved); buildData(); render();
+}
+function deleteCustomSession(date, athlete, dk) {
+  if(!confirm(`Delete ${distKeyLabel(dk)} session for ${athlete} on ${date}?`)) return;
+  const saved=loadSaved().filter(s=>!(s.type==='custom'&&s.athlete===athlete&&s.date===date&&s.distKey===dk));
+  saveSessions(saved); buildData(); renderSidebar(); render();
+}
+
+// ── SIDEBAR CUSTOM DISTANCES ──────────────────────────────────────────────────
+function renderSidebar() {
+  const container = document.getElementById('custom-dist-list');
+  document.getElementById('custom-count').textContent = ALL_DIST_KEYS.length;
+
+  if(!ALL_DIST_KEYS.length){
+    container.innerHTML=`<div class="no-custom">Log a custom session to create a distance graph</div>`;
+    return;
+  }
+  container.innerHTML='';
+  ALL_DIST_KEYS.forEach(dk=>{
+    // Find a rest time hint from any session for this distance
+    const allSessions=Object.values(CDATA[dk]||{}).flat();
+    const restHint=[...new Set(allSessions.map(r=>r.rest).filter(Boolean))].slice(0,1)[0]||'';
+    const btn=document.createElement('button');
+    btn.className='custom-dist-btn'+(S.metric===`custom:${dk}`?' active':'');
+    btn.dataset.dk=dk;
+    btn.innerHTML=`<span>${distKeyLabel(dk)}</span>${restHint?`<span class="cd-rest">${restHint}</span>`:''}`;
+    btn.onclick=()=>{
+      S.metric=`custom:${dk}`; S.compare=false;
+      document.getElementById('cmp-btn').classList.remove('active');
+      document.querySelectorAll('.metric-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.custom-dist-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active'); render();
+    };
+    container.appendChild(btn);
+  });
+}
+
+// ── SESSION LOGGER ────────────────────────────────────────────────────────────
+function setMode(mode) {
+  logMode=mode; logReps=[];
+  document.getElementById('mode-std').className='mode-btn'+(mode==='standard'?' active':'');
+  document.getElementById('mode-cust').className='mode-btn'+(mode==='custom'?' custom-active':'');
+  document.getElementById('std-selectors').style.display=mode==='standard'?'':'none';
+  document.getElementById('cust-selectors').style.display=mode==='custom'?'':'none';
+  document.getElementById('custom-fields').style.display=mode==='custom'?'':'none';
+  document.getElementById('custom-tip').style.display=mode==='custom'?'':'none';
+  document.getElementById('time-input').className='time-input'+(mode==='custom'?' custom-mode':'');
+  document.getElementById('add-rep-btn').className='add-rep-btn'+(mode==='custom'?' custom-mode':'');
+  renderRepsGrid(); updateLiveStats();
+  updateLoggerContext();
+  document.getElementById('save-btn').disabled=true;
+  document.getElementById('time-input').focus();
+}
+
+function openLogger() {
+  logReps=[];
+  document.getElementById('log-athlete').value=S.athlete;
+  document.getElementById('log-athlete-c').value=S.athlete;
+  document.getElementById('log-metric').value=isCustomMetric()?'fa':S.metric;
+  document.getElementById('log-date').value=fmtDateInput(todayStr());
+  document.getElementById('log-date-c').value=fmtDateInput(todayStr());
+  document.getElementById('log-notes').value='';
+  document.getElementById('cust-dist').value='';
+  document.getElementById('cust-rest').value='';
+  document.getElementById('cust-start').value='';
+  document.getElementById('save-btn').disabled=true;
+  document.getElementById('time-input').value='';
+  setMode(isCustomMetric()?'custom':'standard');
+  document.getElementById('logger-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('time-input').focus(),220);
+}
+function closeLogger() { document.getElementById('logger-overlay').classList.remove('open'); }
+
+function updateLoggerContext() {
+  if(logMode==='standard'){
+    const athlete=document.getElementById('log-athlete').value;
+    const key=document.getElementById('log-metric').value;
+    logHistAvg=histAvgStd(athlete,key);
+    logHistPB=histPBStd(athlete,key);
+    const m=STD_METRICS.find(mm=>mm.key===key);
+    document.getElementById('entry-label').textContent=`Rep time — ${m?.label} (${m?.unit})`;
+  } else {
+    const athlete=document.getElementById('log-athlete-c').value;
+    const dk=normalizeDistKey(document.getElementById('cust-dist').value, document.getElementById('cust-start').value);
+    logHistAvg=custHistAvg(athlete,dk)||null;
+    logHistPB=custHistPB(athlete,dk)||null;
+    const dist=document.getElementById('cust-dist').value||'custom';
+    document.getElementById('entry-label').textContent=`Rep time — ${dist} (seconds)`;
+  }
+}
+
+function addRep() {
+  const inp=document.getElementById('time-input');
+  const val=parseFloat(inp.value);
+  if(!val||val<=0||val>9999){inp.focus();return;}
+  logReps.push(parseFloat(val.toFixed(3)));
+  inp.value=''; inp.focus();
+  renderRepsGrid(); updateLiveStats();
+  document.getElementById('save-btn').disabled=false;
+}
+
+function removeRep(idx) {
+  logReps.splice(idx,1);
+  renderRepsGrid(); updateLiveStats();
+  document.getElementById('save-btn').disabled=logReps.length===0;
+}
+
+function renderRepsGrid() {
+  const grid=document.getElementById('reps-grid');
+  const empty=document.getElementById('empty-reps');
+  // Determine lb context
+  const lb = logMode==='custom' ? true : (STD_METRICS.find(m=>m.key===document.getElementById('log-metric')?.value)?.lb??true);
+
+  if(!logReps.length){
+    empty.style.display='flex';
+    [...grid.querySelectorAll('.rep-chip')].forEach(c=>c.remove());
+    return;
+  }
+  empty.style.display='none';
+  [...grid.querySelectorAll('.rep-chip')].forEach(c=>c.remove());
+
+  logReps.forEach((t,i)=>{
+    const chip=document.createElement('div');
+    chip.className='rep-chip';
+    const delta=logHistAvg!=null?t-logHistAvg:null;
+    let cls='rep-avg',deltaStr='';
+    if(delta!=null){
+      const abs=Math.abs(delta).toFixed(2);
+      if(lb){
+        deltaStr=delta>0?`+${abs}`:`-${abs}`;
+        cls=delta<=-0.05?'rep-great':delta<=0?'rep-good':delta<=0.07?'rep-avg':delta<=0.15?'rep-slow':'rep-bad';
+      } else {
+        deltaStr=delta>0?`+${abs}`:`-${abs}`;
+        cls=delta>=0.5?'rep-great':delta>=0?'rep-good':delta>=-0.5?'rep-avg':'rep-bad';
+      }
+    }
+    chip.classList.add(cls);
+    chip.innerHTML=`<div class="rep-num">Rep ${i+1}</div><div class="rep-time">${t.toFixed(2)}</div>${deltaStr?`<div class="rep-delta">${deltaStr}</div>`:''}<div class="rep-del" onclick="removeRep(${i})">✕</div>`;
+    grid.appendChild(chip);
+  });
+}
+
+function updateLiveStats() {
+  const lb = logMode==='custom' ? true : (STD_METRICS.find(m=>m.key===document.getElementById('log-metric')?.value)?.lb??true);
+  document.getElementById('ls-reps').textContent=logReps.length;
+  if(!logReps.length){
+    ['ls-avg','ls-vs-avg','ls-vs-pb'].forEach(id=>{const e=document.getElementById(id);e.textContent='—';e.className='ls-val neutral';});
+    return;
+  }
+  const avg=logReps.reduce((s,v)=>s+v,0)/logReps.length;
+  document.getElementById('ls-avg').textContent=avg.toFixed(3);
+  document.getElementById('ls-avg').className='ls-val neutral';
+  if(logHistAvg!=null){
+    const d=avg-logHistAvg,sign=d>0?'+':'';
+    const e=document.getElementById('ls-vs-avg');
+    e.textContent=sign+d.toFixed(3);
+    e.className='ls-val '+(lb?(d<0?'good':'bad'):(d>0?'good':'bad'));
+  }
+  if(logHistPB!=null){
+    const d=avg-logHistPB,sign=d>0?'+':'';
+    const e=document.getElementById('ls-vs-pb');
+    e.textContent=sign+d.toFixed(3);
+    e.className='ls-val '+(lb?(d<0?'good':'bad'):(d>0?'good':'bad'));
+  }
+}
+
+function saveSession() {
+  if(!logReps.length) return;
+  const saved=loadSaved();
+  const notes=document.getElementById('log-notes').value.trim();
+  const avg=parseFloat((logReps.reduce((s,v)=>s+v,0)/logReps.length).toFixed(3));
+
+  if(logMode==='custom'){
+    const athlete=document.getElementById('log-athlete-c').value;
+    const distRaw=(document.getElementById('cust-dist').value||'').trim();
+    const restRaw=(document.getElementById('cust-rest').value||'').trim();
+    const startType=document.getElementById('cust-start').value||'';
+    if(!distRaw){ alert('Please enter a distance.'); return; }
+    const dk=normalizeDistKey(distRaw,startType);
+    const date=parseDateInput(document.getElementById('log-date-c').value);
+    const entry={type:'custom',athlete,date,distKey:dk,dist:distRaw,rest:restRaw,startType,avg,reps:[...logReps],n:notes||undefined};
+    // Replace if same athlete/dist/date
+    const idx=saved.findIndex(s=>s.type==='custom'&&s.athlete===athlete&&s.date===date&&s.distKey===dk);
+    if(idx>=0) saved[idx]=entry; else saved.push(entry);
+    saveSessions(saved); buildData();
+    S.metric=`custom:${dk}`; S.athlete=athlete; S.compare=false;
+    document.querySelectorAll('.athlete-btn').forEach(b=>b.classList.toggle('active',b.dataset.name===athlete));
+    document.querySelectorAll('.metric-btn').forEach(b=>b.classList.remove('active'));
+    renderSidebar(); render();
+    closeLogger();
+    showFlash(`✓ ${distRaw} session saved — ${date} (${avg.toFixed(3)}s avg)`);
+  } else {
+    const athlete=document.getElementById('log-athlete').value;
+    const metricKey=document.getElementById('log-metric').value;
+    const date=parseDateInput(document.getElementById('log-date').value);
+    const m=STD_METRICS.find(mm=>mm.key===metricKey);
+    const entry={athlete,date,n:notes||undefined};
+    entry[metricKey]=avg;
+    if(m.repKey) entry[m.repKey]=[...logReps];
+    const idx=saved.findIndex(s=>s.athlete===athlete&&s.date===date&&metricKey in s&&s.type!=='custom');
+    if(idx>=0) saved[idx]=entry; else saved.push(entry);
+    saveSessions(saved); buildData();
+    S.athlete=athlete; S.metric=metricKey; S.compare=false;
+    document.querySelectorAll('.athlete-btn').forEach(b=>b.classList.toggle('active',b.dataset.name===athlete));
+    document.querySelectorAll('.metric-btn').forEach(b=>b.classList.toggle('active',b.dataset.key===metricKey));
+    document.querySelectorAll('.custom-dist-btn').forEach(b=>b.classList.remove('active'));
+    renderSidebar(); render();
+    closeLogger();
+    showFlash(`✓ Session saved — ${athlete}, ${date}`);
+  }
+}
+
+function showFlash(msg) {
+  const f=document.getElementById('flash'); f.textContent=msg; f.classList.add('show');
+  setTimeout(()=>f.classList.remove('show'),3000);
+}
+
+// ── REFRESH ───────────────────────────────────────────────────────────────────
+async function refreshFromSheet() {
+  const btn=document.getElementById('refresh-btn');
+  btn.textContent='Loading…'; btn.disabled=true;
+  try {
+    const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+    const resp=await fetch(url,{credentials:'include'});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const csv=await resp.text();
+    const parsed=parseCSV(csv);
+    if(parsed){Object.entries(parsed).forEach(([n,rows])=>{if(MINI[n])MINI[n]=rows;});buildData();renderSidebar();render();btn.textContent='✓ Updated';}
+  } catch(e){btn.textContent='✗ Failed';console.warn(e.message);}
+  setTimeout(()=>{btn.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh`;btn.disabled=false;},2500);
+}
+
+function parseCSV(csv) {
+  try {
+    const lines=csv.split('\n'),dataRows=lines.slice(3).filter(l=>l.trim());
+    const ath={Cian:{flyAvg:9,fly1:3,fly2:4,fly3:5,fly4:6,fly5:7,fly6:8,a45:15,a30:19,m150:35,s23:36,s15:42},Vlad:{flyAvg:92,fly1:86,fly2:87,fly3:88,fly4:89,fly5:90,fly6:91,a45:96,a30:100,m150:105,s23:107,s15:110},Charlie:{flyAvg:120,fly1:114,fly2:115,fly3:116,fly4:117,fly5:118,fly6:119,a45:124,a30:128,m150:129,s23:131,s15:132},Jess:{flyAvg:142,fly1:136,fly2:137,fly3:138,fly4:139,fly5:140,fly6:141,a45:146,a30:150,m150:152,s23:151,s15:154},Elliot:{flyAvg:288,fly1:282,fly2:283,fly3:284,fly4:285,fly5:286,fly6:287,a45:292,a30:296,m150:298,s23:null,s15:299}};
+    const result={};
+    Object.entries(ath).forEach(([name,c])=>{
+      result[name]=dataRows.map(row=>{
+        const cols=row.split(','),d=(cols[2]||'').trim();if(!d)return null;
+        const fr=[c.fly1,c.fly2,c.fly3,c.fly4,c.fly5,c.fly6].map(i=>parseFloat(cols[i])||null).filter(Boolean);
+        const r={d};const fa=parseFloat(cols[c.flyAvg]);if(fa)r.fa=fa;if(fr.length)r.fr=fr;
+        const a45=parseFloat(cols[c.a45]);if(a45)r.a45=a45;const a30=parseFloat(cols[c.a30]);if(a30)r.a30=a30;
+        const m150=parseFloat(cols[c.m150]);if(m150)r.m150=m150;
+        if(c.s23){const s=parseFloat(cols[c.s23]);if(s)r.s23=s;}if(c.s15){const s=parseFloat(cols[c.s15]);if(s)r.s15=s;}
+        return r;
+      }).filter(r=>r&&(r.fa||r.a45||r.a30||r.m150||r.s15||r.fr?.length));
+    });
+    return result;
+  } catch(e){console.error(e);return null;}
+}
+
+// ── SETUP ─────────────────────────────────────────────────────────────────────
+function setupUI() {
+  // Athletes
+  const al=document.getElementById('athlete-list');
+  Object.entries(ATHLETES).forEach(([name,cfg])=>{
+    const btn=document.createElement('button');
+    btn.className='athlete-btn'+(name===S.athlete?' active':'');
+    btn.dataset.name=name;
+    btn.style.setProperty('--ac',cfg.color);
+    btn.innerHTML=`<span class="dot" style="background:${cfg.color}"></span>${name}`;
+    btn.onclick=()=>{S.athlete=name;S.compare=false;document.getElementById('cmp-btn').classList.remove('active');document.querySelectorAll('.athlete-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();};
+    al.appendChild(btn);
+  });
+
+  // Standard metrics
+  const ml=document.getElementById('metric-list');
+  STD_METRICS.forEach(m=>{
+    const btn=document.createElement('button');
+    btn.className='metric-btn'+(m.key===S.metric?' active':'');
+    btn.dataset.key=m.key;
+    btn.textContent=m.label;
+    btn.onclick=()=>{S.metric=m.key;S.compare=false;document.getElementById('cmp-btn').classList.remove('active');document.querySelectorAll('.metric-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.custom-dist-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();};
+    ml.appendChild(btn);
+  });
+
+  // Populate logger selects
+  ['log-athlete','log-athlete-c'].forEach(id=>{
+    const sel=document.getElementById(id);
+    Object.keys(ATHLETES).forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
+  });
+  const ms=document.getElementById('log-metric');
+  STD_METRICS.forEach(m=>{const o=document.createElement('option');o.value=m.key;o.textContent=m.label;ms.appendChild(o);});
+  document.getElementById('log-athlete').addEventListener('change',updateLoggerContext);
+  document.getElementById('log-athlete-c').addEventListener('change',updateLoggerContext);
+  document.getElementById('log-metric').addEventListener('change',updateLoggerContext);
+  document.getElementById('cust-dist').addEventListener('input',updateLoggerContext);
+  document.getElementById('cust-start').addEventListener('change',updateLoggerContext);
+
+  // Range buttons
+  document.querySelectorAll('.range-btn').forEach(btn=>{
+    btn.onclick=()=>{S.range=parseInt(btn.dataset.n);document.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();};
+  });
+
+  // Compare
+  document.getElementById('cmp-btn').onclick=function(){S.compare=!S.compare;this.classList.toggle('active',S.compare);render();};
+
+  // Logger open/close
+  document.getElementById('open-logger-btn').onclick=openLogger;
+  document.getElementById('close-logger').onclick=closeLogger;
+  document.getElementById('logger-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('logger-overlay'))closeLogger();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLogger();});
+
+  // Rep entry
+  document.getElementById('add-rep-btn').onclick=addRep;
+  document.getElementById('time-input').addEventListener('keydown',e=>{if(e.key==='Enter')addRep();});
+  document.getElementById('clear-input-btn').onclick=()=>{document.getElementById('time-input').value='';document.getElementById('time-input').focus();};
+
+  // Save
+  document.getElementById('save-btn').onclick=saveSession;
+
+  // Refresh
+  document.getElementById('refresh-btn').onclick=refreshFromSheet;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+buildData();
+setupUI();
+renderSidebar();
+render();
+document.getElementById('load-overlay').classList.add('hidden');
+</script>
+</body>
+</html>
