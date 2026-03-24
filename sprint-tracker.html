@@ -199,16 +199,123 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 .flash { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--green); color: #0f1117; padding: 10px 22px; border-radius: 10px; font-weight: 700; font-size: 13.5px; z-index: 999; opacity: 0; transition: opacity .25s; pointer-events: none; white-space: nowrap; }
 .flash.show { opacity: 1; }
 
-#load-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; }
+#load-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; y-index: 100; }
 #load-overlay.hidden { display: none; }
 .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── SESSION ROSTER (multi-athlete) ─────────────────────────────── */
+.roster-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 0 22px 14px; }
+.roster-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 20px; background: var(--surface2); cursor: pointer; font-size: 12px; transition: all .12s; }
+.roster-chip.active { border-color: var(--accent); background: rgba(79,142,247,.14); }
+.roster-chip .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.roster-chip .chip-name { font-weight: 600; }
+.roster-chip .chip-label { color: var(--muted); font-size: 11px; }
+.roster-chip .chip-cnt { background: rgba(255,255,255,.08); border-radius: 10px; padding: 1px 6px; font-size: 10px; margin-left: 2px; }
+.roster-add-btn { padding: 6px 12px; border: 1.5px dashed var(--border); border-radius: 20px; background: none; color: var(--muted); cursor: pointer; font-size: 12px; transition: all .12s; }
+.roster-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+.chip-remove { margin-left: 4px; opacity: .45; font-size: 10px; line-height: 1; padding: 1px 3px; border-radius: 4px; transition: opacity .1s; }
+.roster-chip:hover .chip-remove { opacity: .8; }
+.chip-remove:hover { opacity: 1 !important; color: var(--red); }
+
+/* ── MOBILE RESPONSIVE ───────────────────────────────────────────── */
+#menu-btn, #panel-btn {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+#sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 90;
+}
+
+@media (max-width: 768px) {
+  /* show hamburger & stats buttons */
+  #menu-btn, #panel-btn { display: flex; align-items: center; justify-content: center; }
+
+  /* sidebar becomes a slide-in drawer */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    width: 270px;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+  }
+  body.sidebar-open #sidebar { transform: translateX(0); }
+  body.sidebar-open #sidebar-backdrop { display: block; }
+
+  /* hide right panel by default; show when panel-open */
+  #panel {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    z-index: 100;
+    width: 280px;
+    transform: translateX(100%);
+    transition: transform .25s ease;
+  }
+  body.panel-open #panel { transform: translateX(0); }
+  body.panel-open #sidebar-backdrop { display: block; }
+
+  /* topbar layout on mobile */
+  #topbar { padding: 10px 12px; gap: 8px; }
+  #topbar .tb-left { flex: 1; min-width: 0; }
+  #topbar .tb-left h2 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #topbar .tb-left p  { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .range-row { gap: 4px; }
+  .range-btn { padding: 4px 8px; font-size: 11px; }
+  .refresh-btn { padding: 4px 8px; font-size: 11px; }
+
+  /* full-width chart area */
+  #chart-area { padding: 12px; }
+
+  /* logger full-screen on mobile */
+  #logger { width: 100% !important; max-width: 100% !important; border-radius: 0 !important; min-height: 100vh; max-height: 100vh !important; }
+  #logger-overlay { align-items: flex-start; }
+
+  /* stat cards stack 2-per-row */
+  .stat-grid { grid-template-columns: 1fr 1fr !important; }
+
+  /* live stats wrap */
+  .live-stats { flex-wrap: wrap; margin: 10px 12px 0; }
+  .live-stat { flex: 1 0 40%; border-bottom: 1px solid var(--border); }
+
+  /* log session button in topbar on mobile (sidebar hidden) */
+  #open-logger-btn-mobile {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+}
+@media (min-width: 769px) {
+  #open-logger-btn-mobile { display: none !important; }
+}
 </style>
 </head>
 <body>
+<div id="sidebar-backdrop"></div>
 
 <div id="load-overlay"><div class="spinner"></div></div>
 <div class="flash" id="flash"></div>
@@ -277,6 +384,12 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
       Enter a <strong>distance</strong> and <strong>rest time</strong> — a new graph will be created automatically and all sessions for that distance will be tracked together.
     </div>
 
+    <!-- session roster (multi-athlete) -->
+    <div class="roster-bar" id="roster-bar" style="display:none">
+      <div id="roster-chips"></div>
+      <button class="roster-add-btn" id="roster-add-btn">+ Add athlete</button>
+    </div>
+
     <!-- entry -->
     <div class="logger-entry">
       <div class="entry-label" id="entry-label">Enter rep time (seconds)</div>
@@ -294,7 +407,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
     <div class="live-stats">
       <div class="live-stat"><div class="ls-lbl">Reps</div><div class="ls-val neutral" id="ls-reps">0</div></div>
       <div class="live-stat"><div class="ls-lbl">Session Avg</div><div class="ls-val neutral" id="ls-avg">—</div></div>
-      <div class="live-stat"><div class="ls-lbl">vs Hist. Avg</div><div class="ls-val neutral" id="ls-vs-avg">—</div></div>
+      <div class="live-stat"><div class="ls-lbl">PB</div><div class="ls-val neutral" id="ls-pb-val">—</div></div>
       <div class="live-stat"><div class="ls-lbl">vs PB</div><div class="ls-val neutral" id="ls-vs-pb">—</div></div>
     </div>
 
@@ -348,10 +461,12 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 <!-- ── MAIN ───────────────────────────────────────────────────────────────── -->
 <div id="main">
   <div id="topbar">
+    <button id="menu-btn" aria-label="Menu">☰</button>
     <div class="tb-left">
       <h2 id="tb-name">Cian</h2>
       <p id="tb-metric">30m Flying Start — Average</p>
     </div>
+    <button id="open-logger-btn-mobile">+ Log</button>
     <div class="range-row">
       <button class="range-btn" data-n="12">3M</button>
       <button class="range-btn" data-n="26">6M</button>
@@ -360,6 +475,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
         Refresh
       </button>
+      <button id="panel-btn" aria-label="Stats">📊</button>
     </div>
   </div>
 
@@ -403,12 +519,12 @@ const MINI = {"Cian":[{"d":"22-Jun","fa":3.12,"fr":[3.12,3.12],"s15":134},{"d":"
 const SHEET_ID = '1qD2sgFZM67788JxyoNhdLyTcWhEq4Kk_rwmrtVVRjLY';
 const ATHLETES = { Cian:{color:'#4f8ef7'}, Vlad:{color:'#a78bfa'}, Jess:{color:'#f472b6'}, Elliot:{color:'#fb923c'} };
 const STD_METRICS = [
-  { key:'fa',   label:'30m Fly Avg',   unit:'s', lb:true,  repKey:'fr' },
-  { key:'a45',  label:'45m Avg',        unit:'s', lb:true,  repKey:null },
-  { key:'a30',  label:'30m Start Avg',  unit:'s', lb:true,  repKey:null },
-  { key:'m150', label:'150m Time',      unit:'s', lb:true,  repKey:null },
-  { key:'s15',  label:'15s Distance',   unit:'m', lb:false, repKey:null },
-  { key:'s23',  label:'23s Distance',   unit:'m', lb:false, repKey:null },
+  { key:'fa',   label:'30m Fly',             unit:'s', lb:true,  repKey:'fr' },
+  { key:'a45',  label:'30m Fly (short run in)', unit:'s', lb:true,  repKey:null },
+  { key:'a30',  label:'30m Start',           unit:'s', lb:true,  repKey:null },
+  { key:'m150', label:'150m Time',           unit:'s', lb:true,  repKey:null },
+  { key:'s15',  label:'15s Distance',        unit:'m', lb:false, repKey:null },
+  { key:'s23',  label:'23s Distance',        unit:'m', lb:false, repKey:null },
 ];
 const LS_KEY = 'sprint26_sessions_v3';
 
@@ -424,6 +540,9 @@ let mainChart = null, repsChart = null;
 let logReps = [];
 let logMode = 'standard'; // 'standard' | 'custom'
 let logHistAvg = null, logHistPB = null;
+// Multi-athlete roster
+let rosterCache = {}; // key → {name, mode, metric, customDist, customStart, label, reps, notes}
+let currentRosterKey = null;
 
 // ── LOCALSTORAGE ─────────────────────────────────────────────────────────────
 function loadSaved() { try { return JSON.parse(localStorage.getItem(LS_KEY)||'[]'); } catch { return []; } }
@@ -491,7 +610,7 @@ function filteredStdRows(name) {
 
 function filteredCustRows(name) {
   const dk = customDistKey();
-  const all = (CDATA[dk]?.[name]||[]);
+  const all = (CDATA[dk]?.[name]||[]).filter(r=>r!=null);
   return S.range>=9999 ? all : all.slice(-S.range);
 }
 
@@ -499,6 +618,15 @@ function destroy(c) { c&&c.destroy(); return null; }
 
 function pbStd(rs) {
   if(!rs.length) return null;
+  // For fly (fa), PB = best individual rep from fr arrays, not session avg
+  if(S.metric==='fa') {
+    const allReps=rs.flatMap(r=>r.fr||[]);
+    if(allReps.length) {
+      const bestVal=Math.min(...allReps);
+      const row=rs.find(r=>(r.fr||[]).includes(bestVal))||rs[0];
+      return {fa:bestVal, d:row.d, _saved:row._saved};
+    }
+  }
   const m = getMeta(S.metric);
   return rs.reduce((b,r)=>(m.lb?r[S.metric]<b[S.metric]:r[S.metric]>b[S.metric])?r:b);
 }
@@ -515,6 +643,11 @@ function histAvgStd(name, key) {
 }
 
 function histPBStd(name, key) {
+  // For fly (fa), PB = best individual rep from fr arrays
+  if(key==='fa') {
+    const allReps=(MINI[name]||[]).flatMap(r=>r.fr||[]);
+    if(allReps.length) return Math.min(...allReps);
+  }
   const v=(MINI[name]||[]).filter(r=>r[key]!=null);
   if(!v.length) return null;
   const m=getMeta(key);
@@ -543,10 +676,31 @@ function trendCust(rows) {
   return {diff:diff.toFixed(3), good:diff<0}; // time = lower better
 }
 
-function dateSort(a,b) {
-  const mo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-  const p=d=>{const[day,mon]=d.split('-');return(mo[mon]??0)*100+parseInt(day||0);};
-  return p(a)-p(b);
+const _SEASON_MO={Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12,Jan:13,Feb:14,Mar:15,Apr:16,May:17,Jun:18};
+function seasonSortVal(d){const[day,mon]=d.split('-');return(_SEASON_MO[mon]??0)*100+parseInt(day||0);}
+function todaySeasonSort(){const t=new Date(),mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return seasonSortVal(`${t.getDate()}-${mo[t.getMonth()]}`);}
+// Season start year: if we're in Jan–Jun, season started previous calendar year
+function getSeasonStartYear(){const t=new Date();return t.getMonth()<6?t.getFullYear()-1:t.getFullYear();}
+// Calendar-aware sort: maps each date to YYYYMMDD using inferred year, so Jun '25 sorts before Mar '26
+function calendarSortVal(d){
+  const sv:seasonSortVal(d),today=todaySeasonSort(),yr=getSeasonStartYear();
+  let year;
+  if(sv<=today){year=sv<1300?yr:yr+1;}else{year=sv<1300?yr-1:yr;}
+  const[day,mon]=d.split('-');
+  const mo={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+  return year*10000+(mo[mon]||0)*100+parseInt(day||0);
+}
+function dateSort(a,b){return calendarSortVal(a)-calendarSortVal(b);}
+// If a date sorts AFTER today it must be from the previous season (no future sessions can exist)
+function dateWithYear(d){
+  const sv=seasonSortVal(d),today=todaySeasonSort(),yr=getSeasonStartYear();
+  if(sv<=today){
+    // current season: Jul–Dec = startYear, Jan–Jun = startYear+1
+    return d+' \''+(sv<1300?String(yr).slice(2):String(yr+1).slice(2));
+  } else {
+    // previous season: Jul–Dec = startYear-1, Jan–Jun = startYear
+    return d+' \''+(sv<1300?String(yr-1).slice(2):String(yr).slice(2));
+  }
 }
 
 function todayStr() {
@@ -676,7 +830,7 @@ function renderMain() {
     if (isCust) {
       const rows=filteredCustRows(S.athlete);
       mainChart=new Chart(ctx,{type:'line',data:{
-        labels:rows.map(r=>r.d),
+        labels:rows.map(r=>dateWithYear(r.d)),
         datasets:[{label:'Avg',data:rows.map(r=>r.avg),borderColor:col,backgroundColor:col+'20',fill:true,tension:.35,
           pointRadius:5,pointHoverRadius:8,pointBackgroundColor:col}]
       },options:chartOpts(true,'s')});
@@ -686,7 +840,7 @@ function renderMain() {
       const ptRadius=rs.map(r=>r._saved?6:4);
       const m=getMeta(S.metric);
       mainChart=new Chart(ctx,{type:'line',data:{
-        labels:rs.map(r=>r.d),
+        labels:rs.map(r=>dateWithYear(r.d)),
         datasets:[{label:m.label,data:rs.map(r=>r[S.metric]),borderColor:col,backgroundColor:col+'20',fill:true,tension:.35,
           pointRadius:ptRadius,pointHoverRadius:8,pointBackgroundColor:ptColors,pointBorderColor:ptColors}]
       },options:chartOpts(m.lb,m.unit)});
@@ -725,7 +879,7 @@ function renderReps() {
     tension:.3,pointRadius:3,fill:false,
   }));
   const ctx2=document.getElementById('rc').getContext('2d');
-  repsChart=new Chart(ctx2,{type:'line',data:{labels:recent.map(r=>r.d),datasets},
+  repsChart=new Chart(ctx2,{type:'line',data:{labels:recent.map(r=>dateWithYear(r.d)),datasets},
     options:{...chartOpts(),...{plugins:{...chartOpts().plugins,legend:{position:'bottom',labels:{color:'#7a80a4',font:{size:10},boxWidth:8,padding:10}}}}}});
 }
 
@@ -733,15 +887,15 @@ function renderPanel() {
   const isCust=isCustomMetric();
   if(isCust){
     const dk=customDistKey();
-    const rows=CDATA[dk]?.[S.athlete]||[];
+    const rows=(CDATA[dk]?.[S.athlete]||[]);
     const best=pbCust(rows);
     document.getElementById('pb-lbl').textContent=distKeyLabel(dk);
     document.getElementById('pb-val').textContent=best?`${best.avg.toFixed(3)} s`:'—';
-    document.getElementById('pb-dt').textContent=best?best.d:'—';
+    document.getElementById('pb-dt').textContent=best?dateWithYear(best.d):'—';
     const recent=[...rows].slice(-8).reverse();
     document.getElementById('sess-list').innerHTML=recent.map(r=>`
       <div class="sess custom-sess">
-        <div class="sd">${r.d}<span class="new-entry-badge">new</span></div>
+        <div class="sd">${dateWithYear(r.d)}<span class="new-entry-badge">new</span></div>
         <div class="sv">${r.avg.toFixed(3)}<small> s</small></div>
         ${r.reps?.length?`<div class="sr">${r.reps.join(', ')}</div>`:''}
         ${r.rest?`<div class="smeta">Rest: ${r.rest}</div>`:''}
@@ -749,16 +903,16 @@ function renderPanel() {
         <button class="del-btn" onclick="deleteCustomSession('${r.d}','${S.athlete}','${dk}')" title="Delete">✕</button>
       </div>`).join('');
   } else {
-    const m=getMeta(S.metric), all=DATA[S.athlete]||[], valid=all.filter(r=>r[S.metric]!=null);
+    const m=getMeta(S.metric), all=(DATA[S.athlete]||[]), valid=all.filter(r=>r[S.metric]!=null);
     const best=pbStd(valid);
     document.getElementById('pb-lbl').textContent=m.label;
     document.getElementById('pb-val').textContent=best?`${best[S.metric]} ${m.unit}`:'—';
-    document.getElementById('pb-dt').textContent=best?best.d:'—';
+    document.getElementById('pb-dt').textContent=best?dateWithYear(best.d):'—';
     const recent=[...all].slice(-8).reverse();
     document.getElementById('sess-list').innerHTML=recent.map(r=>{
       const v=r[S.metric], reps=S.metric==='fa'&&r.fr?.length?r.fr.join(', '):'';
       return `<div class="sess ${v!=null?'has':''} ${r._saved?'new-entry':''}">
-        <div class="sd">${r.d}${r._saved?'<span class="new-entry-badge">new</span>':''}</div>
+        <div class="sd">${dateWithYear(r.d)}${r._saved?'<span class="new-entry-badge">new</span>':''}</div>
         ${v!=null?`<div class="sv">${v}<small> ${m.unit}</small></div>`:'<div style="font-size:11px;color:var(--muted)">No data</div>'}
         ${reps?`<div class="sr">${reps}</div>`:''}
         ${r.n?`<div class="sn">${r.n}</div>`:''}
@@ -785,7 +939,7 @@ function renderSidebar() {
   document.getElementById('custom-count').textContent = ALL_DIST_KEYS.length;
 
   if(!ALL_DIST_KEYS.length){
-    container.innerHTML=`<div class="no-custom">Log a custom session to create a distance graph</div>`;
+    container.innerHTML<`<div class="no-custom">Log a custom session to create a distance graph</div>`;
     return;
   }
   container.innerHTML='';
@@ -796,7 +950,7 @@ function renderSidebar() {
     const btn=document.createElement('button');
     btn.className='custom-dist-btn'+(S.metric===`custom:${dk}`?' active':'');
     btn.dataset.dk=dk;
-    btn.innerHTML=`<span>${distKeyLabel(dk)}</span>${restHint?`<span class="cd-rest">${restHint}</span>`:''}`;
+    btn.innerHTML<`<span>${distKeyLabel(dk)}</span>${restHint?`<span class="cd-rest">${restHint}</span>`:''}`;
     btn.onclick=()=>{
       S.metric=`custom:${dk}`; S.compare=false;
       document.getElementById('cmp-btn').classList.remove('active');
@@ -806,6 +960,116 @@ function renderSidebar() {
     };
     container.appendChild(btn);
   });
+}
+
+// ── SESSION ROSTER ────────────────────────────────────────────────────────────
+function getRosterKey() {
+  if(logMode==='standard'){
+    const a=document.getElementById('log-athlete').value;
+    const m=document.getElementById('log-metric').value;
+    return `std_${a}_${m}`;
+  } else {
+    const a=document.getElementById('log-athlete-c').value;
+    const d=(document.getElementById('cust-dist').value||'').trim();
+    const s=document.getElementById('cust-start').value||'';
+    return `cust_${a}_${d}_${s}`;
+  }
+}
+
+function getRosterLabel() {
+  if(logMode==='standard'){
+    const m=STD_METRICS.find(mm=>mm.key===document.getElementById('log-metric').value);
+    return m?.label||'';
+  } else {
+    return (document.getElementById('cust-dist').value||'').trim()||'custom';
+  }
+}
+
+function saveCurrentToRoster() {
+  if(!currentRosterKey) return;
+  if(!rosterCache[currentRosterKey]) rosterCache[currentRosterKey]={reps:[],notes:''};
+  rosterCache[currentRosterKey].reps=[...logReps];
+  rosterCache[currentRosterKey].notes=document.getElementById('log-notes')?.value||'';
+}
+
+function renderRoster() {
+  const chips=document.getElementById('roster-chips');
+  const bar=document.getElementById('roster-bar');
+  if(!chips||!bar) return;
+  const keys=Object.keys(rosterCache);
+  bar.style.display=keys.length>0?'flex':'none';
+  chips.innerHTML='';
+  keys.forEach(key=>{
+    const e=rosterCache[key];
+    const color=ATHLETES[e.name]?.color||'#888';
+    const btn=document.createElement('button');
+    btn.className='roster-chip'+(key===currentRosterKey?' active':'');
+    btn.innerHTML=`<div class="chip-dot" style="background:${color}"></div><span class="chip-name">${e.name}</span><span class="chip-label">${e.label||''}</span>${e.reps?.length?`<span class="chip-cnt">${e.reps.length} rep${e.reps.length!==1?'s':''}</span>`:''}<span class="chip-remove" title="Remove">✕</span>`;
+    btn.onclick=()=>switchToRosterSlot(key);
+    btn.querySelector('.chip-remove').onclick=(ev)=>{ev.stopPropagation();removeFromRoster(key);};
+    chips.appendChild(btn);
+  });
+  // Update save button label
+  const withReps=Object.values(rosterCache).filter(e=>e.reps?.length>0);
+  const savBtn=document.getElementById('save-btn');
+  if(savBtn) savBtn.textContent=withReps.length>1?`Save All (${withReps.length})`:'Save';
+}
+
+function switchToRosterSlot(key) {
+  if(key===currentRosterKey) return;
+  saveCurrentToRoster();
+  const e=rosterCache[key];
+  if(!e) return;
+  // Switch dropdowns silently (will trigger updateLoggerContext via event, so we block re-save)
+  currentRosterKey=key;
+  if(e.mode==='standard'){
+    logMode='standard';
+    document.getElementById('mode-std').className='mode-btn active';
+    document.getElementById('mode-cust').className='mode-btn';
+    document.getElementById('std-selectors').style.display='';
+    document.getElementById('cust-selectors').style.display='none';
+    document.getElementById('custom-fields').style.display='none';
+    document.getElementById('custom-tip').style.display='none';
+    document.getElementById('log-athlete').value=e.name;
+    document.getElementById('log-metric').value=e.metric;
+  } else {
+    logMode='custom';
+    document.getElementById('mode-std').className='mode-btn';
+    document.getElementById('mode-cust').className='mode-btn custom-active';
+    document.getElementById('std-selectors').style.display='none';
+    document.getElementById('cust-selectors').style.display='';
+    document.getElementById('custom-fields').style.display='';
+    document.getElementById('custom-tip').style.display='';
+    document.getElementById('log-athlete-c').value=e.name;
+    document.getElementById('cust-dist').value=e.customDist||'';
+    document.getElementById('cust-start').value=e.customStart||'';
+  }
+  logReps=[...(e.reps||[])];
+  document.getElementById('log-notes').value=e.notes||'';
+  renderRepsGrid();
+  updateLiveStats();
+  updateLoggerContext(false);
+  renderRoster();
+  document.getElementById('save-btn').disabled=!logReps.length && !Object.values(rosterCache).some(v=>v.reps?.length);
+}
+
+function removeFromRoster(key) {
+  delete rosterCache[key];
+  // If we removed the active athlete, switch to another or reset
+  if(key===currentRosterKey){
+    const remaining=Object.keys(rosterCache);
+    if(remaining.length){
+      switchToRosterSlot(remaining[0]);
+    } else {
+      currentRosterKey=null;
+      logReps=[];
+      document.getElementById('log-notes').value='';
+      renderRepsGrid();
+      updateLiveStats();
+      document.getElementById('save-btn').disabled=true;
+    }
+  }
+  renderRoster();
 }
 
 // ── SESSION LOGGER ────────────────────────────────────────────────────────────
@@ -820,12 +1084,16 @@ function setMode(mode) {
   document.getElementById('time-input').className='time-input'+(mode==='custom'?' custom-mode':'');
   document.getElementById('add-rep-btn').className='add-rep-btn'+(mode==='custom'?' custom-mode':'');
   renderRepsGrid(); updateLiveStats();
-  updateLoggerContext();
+  // Remove unconfirmed (zero-rep) entries when switching mode — they'll be recreated correctly
+  Object.keys(rosterCache).forEach(k=>{if(!rosterCache[k].reps?.length){delete rosterCache[k];}});
+  if(currentRosterKey && !rosterCache[currentRosterKey]) currentRosterKey=null;
+  updateLoggerContext(true);
   document.getElementById('save-btn').disabled=true;
   document.getElementById('time-input').focus();
 }
 
 function openLogger() {
+  rosterCache={}; currentRosterKey=null;
   logReps=[];
   document.getElementById('log-athlete').value=S.athlete;
   document.getElementById('log-athlete-c').value=S.athlete;
@@ -844,12 +1112,51 @@ function openLogger() {
 }
 function closeLogger() { document.getElementById('logger-overlay').classList.remove('open'); }
 
-function updateLoggerContext() {
+function updateLoggerContext(clearReps) {
+  if(clearReps){
+    saveCurrentToRoster(); // save old athlete's reps before switching
+    const newKey=getRosterKey();
+    const cached=rosterCache[newKey];
+    logReps=cached?[...cached.reps]:[];
+    if(cached?.notes!=null) document.getElementById('log-notes').value=cached.notes;
+    currentRosterKey=newKey;
+    renderRepsGrid();
+    updateLiveStats();
+    document.getElementById('save-btn').disabled=!logReps.length && !Object.values(rosterCache).some(v=>v.reps?.length);
+  } else {
+    // Distance/start field changed — rename the existing roster entry rather than creating a new one
+    const newKey=getRosterKey();
+    if(currentRosterKey && rosterCache[currentRosterKey] && newKey!==currentRosterKey) {
+      rosterCache[newKey]=rosterCache[currentRosterKey];
+      delete rosterCache[currentRosterKey];
+    }
+    currentRosterKey=newKey;
+  }
+  // Register current athlete in roster if not already present
+  if(currentRosterKey && !rosterCache[currentRosterKey]) {
+    const name=logMode==='standard'?document.getElementById('log-athlete').value:document.getElementById('log-athlete-c').value;
+    rosterCache[currentRosterKey]={name, mode:logMode, label:getRosterLabel(), reps:[], notes:''};
+    if(logMode==='standard') rosterCache[currentRosterKey].metric=document.getElementById('log-metric').value;
+    else { rosterCache[currentRosterKey].customDist=document.getElementById('cust-dist').value||''; rosterCache[currentRosterKey].customStart=document.getElementById('cust-start').value||''; }
+  } else if(currentRosterKey && rosterCache[currentRosterKey]) {
+    // Keep the entry's dist/label up to date as user types
+    rosterCache[currentRosterKey].label=getRosterLabel();
+    if(logMode!=='standard'){
+      rosterCache[currentRosterKey].customDist=document.getElementById('cust-dist').value||'';
+      rosterCache[currentRosterKey].customStart=document.getElementById('cust-start').value||'';
+    }
+  }
+  renderRoster();
   if(logMode==='standard'){
     const athlete=document.getElementById('log-athlete').value;
     const key=document.getElementById('log-metric').value;
     logHistAvg=histAvgStd(athlete,key);
     logHistPB=histPBStd(athlete,key);
+    // For fly metric use best individual rep as PB
+    if(key==='fa'){
+      const allReps=(DATA[athlete]||[]).flatMap(r=>r.fr||[]);
+      if(allReps.length) logHistPB=Math.min(...allReps);
+    }
     const m=STD_METRICS.find(mm=>mm.key===key);
     document.getElementById('entry-label').textContent=`Rep time — ${m?.label} (${m?.unit})`;
   } else {
@@ -860,6 +1167,9 @@ function updateLoggerContext() {
     const dist=document.getElementById('cust-dist').value||'custom';
     document.getElementById('entry-label').textContent=`Rep time — ${dist} (seconds)`;
   }
+  // Update PB display in live stats
+  const pbEl=document.getElementById('ls-pb-val');
+  if(pbEl) pbEl.textContent=logHistPB!=null?logHistPB.toFixed(3)+'s':'—';
 }
 
 function addRep() {
@@ -868,14 +1178,20 @@ function addRep() {
   if(!val||val<=0||val>9999){inp.focus();return;}
   logReps.push(parseFloat(val.toFixed(3)));
   inp.value=''; inp.focus();
+  // keep roster cache in sync
+  if(currentRosterKey && rosterCache[currentRosterKey]) rosterCache[currentRosterKey].reps=[...logReps];
   renderRepsGrid(); updateLiveStats();
   document.getElementById('save-btn').disabled=false;
+  renderRoster();
 }
 
 function removeRep(idx) {
   logReps.splice(idx,1);
+  if(currentRosterKey && rosterCache[currentRosterKey]) rosterCache[currentRosterKey].reps=[...logReps];
   renderRepsGrid(); updateLiveStats();
-  document.getElementById('save-btn').disabled=logReps.length===0;
+  const anyReps=logReps.length>0 || Object.values(rosterCache).some(e=>e.reps?.length>0);
+  document.getElementById('save-btn').disabled=!anyReps;
+  renderRoster();
 }
 
 function renderRepsGrid() {
@@ -908,7 +1224,7 @@ function renderRepsGrid() {
       }
     }
     chip.classList.add(cls);
-    chip.innerHTML=`<div class="rep-num">Rep ${i+1}</div><div class="rep-time">${t.toFixed(2)}</div>${deltaStr?`<div class="rep-delta">${deltaStr}</div>`:''}<div class="rep-del" onclick="removeRep(${i})">✕</div>`;
+    chip.innerHTML<`<div class="rep-num">Rep ${i+1}</div><div class="rep-time">${t.toFixed(2)}</div>${deltaStr?`<div class="rep-delta">${deltaStr}</div>`:''}<div class="rep-del" onclick="removeRep(${i})">✕</div>`;
     grid.appendChild(chip);
   });
 }
@@ -917,70 +1233,84 @@ function updateLiveStats() {
   const lb = logMode==='custom' ? true : (STD_METRICS.find(m=>m.key===document.getElementById('log-metric')?.value)?.lb??true);
   document.getElementById('ls-reps').textContent=logReps.length;
   if(!logReps.length){
-    ['ls-avg','ls-vs-avg','ls-vs-pb'].forEach(id=>{const e=document.getElementById(id);e.textContent='—';e.className='ls-val neutral';});
+    ['ls-avg','ls-vs-pb'].forEach(id=>{const e=document.getElementById(id);if(e){e.textContent='—';e.className='ls-val neutral';}});
     return;
   }
   const avg=logReps.reduce((s,v)=>s+v,0)/logReps.length;
-  document.getElementById('ls-avg').textContent=avg.toFixed(3);
-  document.getElementById('ls-avg').className='ls-val neutral';
-  if(logHistAvg!=null){
-    const d=avg-logHistAvg,sign=d>0?'+':'';
-    const e=document.getElementById('ls-vs-avg');
-    e.textContent=sign+d.toFixed(3);
-    e.className='ls-val '+(lb?(d<0?'good':'bad'):(d>0?'good':'bad'));
-  }
+  const avgEl=document.getElementById('ls-avg');
+  if(avgEl){avgEl.textContent=avg.toFixed(3);avgEl.className='ls-val neutral';}
   if(logHistPB!=null){
     const d=avg-logHistPB,sign=d>0?'+':'';
     const e=document.getElementById('ls-vs-pb');
-    e.textContent=sign+d.toFixed(3);
-    e.className='ls-val '+(lb?(d<0?'good':'bad'):(d>0?'good':'bad'));
+    if(e){e.textContent=sign+d.toFixed(3);e.className='ls-val '+(lb?(d<0?'good':'bad'):(d>0?'good':'bad'));}
   }
 }
 
 function saveSession() {
-  if(!logReps.length) return;
-  const saved=loadSaved();
-  const notes=document.getElementById('log-notes').value.trim();
-  const avg=parseFloat((logReps.reduce((s,v)=>s+v,0)/logReps.length).toFixed(3));
+  // Sync current athlete's reps into roster before saving
+  saveCurrentToRoster();
 
-  if(logMode==='custom'){
-    const athlete=document.getElementById('log-athlete-c').value;
-    const distRaw=(document.getElementById('cust-dist').value||'').trim();
-    const restRaw=(document.getElementById('cust-rest').value||'').trim();
-    const startType=document.getElementById('cust-start').value||'';
-    if(!distRaw){ alert('Please enter a distance.'); return; }
-    const dk=normalizeDistKey(distRaw,startType);
-    const date=parseDateInput(document.getElementById('log-date-c').value);
-    const entry={type:'custom',athlete,date,distKey:dk,dist:distRaw,rest:restRaw,startType,avg,reps:[...logReps],n:notes||undefined};
-    // Replace if same athlete/dist/date
-    const idx=saved.findIndex(s=>s.type==='custom'&&s.athlete===athlete&&s.date===date&&s.distKey===dk);
-    if(idx>=0) saved[idx]=entry; else saved.push(entry);
-    saveSessions(saved); buildData();
-    S.metric=`custom:${dk}`; S.athlete=athlete; S.compare=false;
-    document.querySelectorAll('.athlete-btn').forEach(b=>b.classList.toggle('active',b.dataset.name===athlete));
-    document.querySelectorAll('.metric-btn').forEach(b=>b.classList.remove('active'));
-    renderSidebar(); render();
-    closeLogger();
-    showFlash(`✓ ${distRaw} session saved — ${date} (${avg.toFixed(3)}s avg)`);
-  } else {
-    const athlete=document.getElementById('log-athlete').value;
-    const metricKey=document.getElementById('log-metric').value;
-    const date=parseDateInput(document.getElementById('log-date').value);
-    const m=STD_METRICS.find(mm=>mm.key===metricKey);
-    const entry={athlete,date,n:notes||undefined};
-    entry[metricKey]=avg;
-    if(m.repKey) entry[m.repKey]=[...logReps];
-    const idx=saved.findIndex(s=>s.athlete===athlete&&s.date===date&&metricKey in s&&s.type!=='custom');
-    if(idx>=0) saved[idx]=entry; else saved.push(entry);
-    saveSessions(saved); buildData();
-    S.athlete=athlete; S.metric=metricKey; S.compare=false;
-    document.querySelectorAll('.athlete-btn').forEach(b=>b.classList.toggle('active',b.dataset.name===athlete));
-    document.querySelectorAll('.metric-btn').forEach(b=>b.classList.toggle('active',b.dataset.key===metricKey));
-    document.querySelectorAll('.custom-dist-btn').forEach(b=>b.classList.remove('active'));
-    renderSidebar(); render();
-    closeLogger();
-    showFlash(`✓ Session saved — ${athlete}, ${date}`);
+  // Collect all entries with reps from roster
+  const allEntries = Object.entries(rosterCache).filter(([,e])=>e.reps&&e.reps.length>0);
+  if(!allEntries.length) return;
+
+  const saved=loadSaved();
+  const stdDate=parseDateInput(document.getElementById('log-date').value);
+  const custDate=parseDateInput(document.getElementById('log-date-c').value);
+  const custRestRaw=(document.getElementById('cust-rest').value||'').trim();
+
+  let lastAthlete=null, lastMetric=null, savedCount=0;
+
+  allEntries.forEach(([key, e])=>{
+    const reps=e.reps;
+    const notes=e.notes||'';
+    const avg=parseFloat((reps.reduce((s,v)=>s+v,0)/reps.length).toFixed(3));
+
+    if(e.mode==='custom'){
+      const distRaw=e.customDist||'';
+      if(!distRaw) return;
+      const startType=e.customStart||'';
+      const dk=normalizeDistKey(distRaw,startType);
+      const date=custDate;
+      const entry={type:'custom',athlete:e.name,date,distKey:dk,dist:distRaw,rest:custRestRaw,startType,avg,reps:[...reps],n:notes||undefined};
+      const idx=saved.findIndex(s=>s.type==='custom'&&s.athlete===e.name&&s.date===date&&s.distKey===dk);
+      if(idx>=0) saved[idx]=entry; else saved.push(entry);
+      lastMetric=`custom:${dk}`;
+    } else {
+      const metricKey=e.metric;
+      const m=STD_METRICS.find(mm=>mm.key===metricKey);
+      const date=stdDate;
+      const entry={athlete:e.name,date,n:notes||undefined};
+      entry[metricKey]=avg;
+      if(m?.repKey) entry[m.repKey]=[...reps];
+      const idx=saved.findIndex(s=>s.athlete===e.name&&s.date===date&&metricKey in s&&s.type!=='custom');
+      if(idx>=0) saved[idx]=entry; else saved.push(entry);
+      lastMetric=metricKey;
+    }
+    lastAthlete=e.name;
+    savedCount++;
+  });
+
+  saveSessions(saved); buildData();
+
+  // Navigate to last saved athlete/metric
+  if(lastAthlete){
+    S.athlete=lastAthlete; S.compare=false;
+    if(lastMetric?.startsWith('custom:')){
+      S.metric=lastMetric;
+      document.querySelectorAll('.athlete-btn').forEach(b=>b.classList.toggle('active',b.dataset.name===lastAthlete));
+      document.querySelectorAll('.metric-btn').forEach(b=>b.classList.remove('active'));
+    } else if(lastMetric){
+      S.metric=lastMetric;
+      document.querySelectorAll('.athlete-btn').forEach(b=>b.classList.toggle('active',b.dataset.name===lastAthlete));
+      document.querySelectorAll('.metric-btn').forEach(b=>b.classList.toggle('active',b.dataset.key===lastMetric));
+      document.querySelectorAll('.custom-dist-btn').forEach(b=>b.classList.remove('active'));
+    }
   }
+  renderSidebar(); render();
+  closeLogger();
+  const names=[...new Set(allEntries.map(([,e])=>e.name))].join(', ');
+  showFlash(`✓ ${savedCount} session${savedCount!==1?'s':''} saved — ${names}`);
 }
 
 function showFlash(msg) {
@@ -1000,7 +1330,7 @@ async function refreshFromSheet() {
     const parsed=parseCSV(csv);
     if(parsed){Object.entries(parsed).forEach(([n,rows])=>{if(MINI[n])MINI[n]=rows;});buildData();renderSidebar();render();btn.textContent='✓ Updated';}
   } catch(e){btn.textContent='✗ Failed';console.warn(e.message);}
-  setTimeout(()=>{btn.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh`;btn.disabled=false;},2500);
+  setTimeout(()=>{btn.innerHTML<`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh`;btn.disabled=false;},2500);
 }
 
 function parseCSV(csv) {
@@ -1055,11 +1385,11 @@ function setupUI() {
   });
   const ms=document.getElementById('log-metric');
   STD_METRICS.forEach(m=>{const o=document.createElement('option');o.value=m.key;o.textContent=m.label;ms.appendChild(o);});
-  document.getElementById('log-athlete').addEventListener('change',updateLoggerContext);
-  document.getElementById('log-athlete-c').addEventListener('change',updateLoggerContext);
-  document.getElementById('log-metric').addEventListener('change',updateLoggerContext);
-  document.getElementById('cust-dist').addEventListener('input',updateLoggerContext);
-  document.getElementById('cust-start').addEventListener('change',updateLoggerContext);
+  document.getElementById('log-athlete').addEventListener('change',()=>updateLoggerContext(true));
+  document.getElementById('log-athlete-c').addEventListener('change',()=>updateLoggerContext(true));
+  document.getElementById('log-metric').addEventListener('change',()=>updateLoggerContext(true));
+  document.getElementById('cust-dist').addEventListener('input',()=>updateLoggerContext(false));
+  document.getElementById('cust-start').addEventListener('change',()=>updateLoggerContext(false));
 
   // Range buttons
   document.querySelectorAll('.range-btn').forEach(btn=>{
@@ -1085,6 +1415,41 @@ function setupUI() {
 
   // Refresh
   document.getElementById('refresh-btn').onclick=refreshFromSheet;
+
+  // Roster "Add Athlete" button — save current, reset to next unused athlete
+  document.getElementById('roster-add-btn').onclick=()=>{
+    saveCurrentToRoster();
+    // "Used" = current athlete + athletes who already have reps logged
+    // (Ignores zero-rep phantom entries so they don't block adding)
+    const currentName = logMode==='standard'
+      ? document.getElementById('log-athlete').value
+      : document.getElementById('log-athlete-c').value;
+    const used=new Set([
+      currentName,
+      ...Object.values(rosterCache).filter(e=>e.reps?.length>0).map(e=>e.name)
+    ]);
+    const next=Object.keys(ATHLETES).find(a=>!used.has(a));
+    if(!next){ alert('All athletes are already in this session.'); return; }
+    document.getElementById('log-athlete').value=next;
+    document.getElementById('log-athlete-c').value=next;
+    updateLoggerContext(true);
+    document.getElementById('time-input').focus();
+  };
+
+  // Mobile nav
+  const backdrop=document.getElementById('sidebar-backdrop');
+  document.getElementById('menu-btn').onclick=()=>{
+    document.body.classList.toggle('sidebar-open');
+    document.body.classList.remove('panel-open');
+  };
+  document.getElementById('panel-btn').onclick=()=>{
+    document.body.classList.toggle('panel-open');
+    document.body.classList.remove('sidebar-open');
+  };
+  backdrop.onclick=()=>{
+    document.body.classList.remove('sidebar-open','panel-open');
+  };
+  document.getElementById('open-logger-btn-mobile').onclick=openLogger;
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
