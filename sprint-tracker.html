@@ -199,7 +199,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 .flash { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--green); color: #0f1117; padding: 10px 22px; border-radius: 10px; font-weight: 700; font-size: 13.5px; z-index: 999; opacity: 0; transition: opacity .25s; pointer-events: none; white-space: nowrap; }
 .flash.show { opacity: 1; }
 
-#load-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; y-index: 100; }
+#load-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; }
 #load-overlay.hidden { display: none; }
 .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -683,7 +683,7 @@ function todaySeasonSort(){const t=new Date(),mo=['Jan','Feb','Mar','Apr','May',
 function getSeasonStartYear(){const t=new Date();return t.getMonth()<6?t.getFullYear()-1:t.getFullYear();}
 // Calendar-aware sort: maps each date to YYYYMMDD using inferred year, so Jun '25 sorts before Mar '26
 function calendarSortVal(d){
-  const sv:seasonSortVal(d),today=todaySeasonSort(),yr=getSeasonStartYear();
+  const sv=seasonSortVal(d),today=todaySeasonSort(),yr=getSeasonStartYear();
   let year;
   if(sv<=today){year=sv<1300?yr:yr+1;}else{year=sv<1300?yr-1:yr;}
   const[day,mon]=d.split('-');
@@ -939,7 +939,7 @@ function renderSidebar() {
   document.getElementById('custom-count').textContent = ALL_DIST_KEYS.length;
 
   if(!ALL_DIST_KEYS.length){
-    container.innerHTML<`<div class="no-custom">Log a custom session to create a distance graph</div>`;
+    container.innerHTML=`<div class="no-custom">Log a custom session to create a distance graph</div>`;
     return;
   }
   container.innerHTML='';
@@ -950,7 +950,7 @@ function renderSidebar() {
     const btn=document.createElement('button');
     btn.className='custom-dist-btn'+(S.metric===`custom:${dk}`?' active':'');
     btn.dataset.dk=dk;
-    btn.innerHTML<`<span>${distKeyLabel(dk)}</span>${restHint?`<span class="cd-rest">${restHint}</span>`:''}`;
+    btn.innerHTML=`<span>${distKeyLabel(dk)}</span>${restHint?`<span class="cd-rest">${restHint}</span>`:''}`;
     btn.onclick=()=>{
       S.metric=`custom:${dk}`; S.compare=false;
       document.getElementById('cmp-btn').classList.remove('active');
@@ -1224,7 +1224,7 @@ function renderRepsGrid() {
       }
     }
     chip.classList.add(cls);
-    chip.innerHTML<`<div class="rep-num">Rep ${i+1}</div><div class="rep-time">${t.toFixed(2)}</div>${deltaStr?`<div class="rep-delta">${deltaStr}</div>`:''}<div class="rep-del" onclick="removeRep(${i})">✕</div>`;
+    chip.innerHTML=`<div class="rep-num">Rep ${i+1}</div><div class="rep-time">${t.toFixed(2)}</div>${deltaStr?`<div class="rep-delta">${deltaStr}</div>`:''}<div class="rep-del" onclick="removeRep(${i})">✕</div>`;
     grid.appendChild(chip);
   });
 }
@@ -1330,7 +1330,7 @@ async function refreshFromSheet() {
     const parsed=parseCSV(csv);
     if(parsed){Object.entries(parsed).forEach(([n,rows])=>{if(MINI[n])MINI[n]=rows;});buildData();renderSidebar();render();btn.textContent='✓ Updated';}
   } catch(e){btn.textContent='✗ Failed';console.warn(e.message);}
-  setTimeout(()=>{btn.innerHTML<`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh`;btn.disabled=false;},2500);
+  setTimeout(()=>{btn.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh`;btn.disabled=false;},2500);
 }
 
 function parseCSV(csv) {
